@@ -157,7 +157,7 @@ static struct dbs_tuners {
 	.sync_freq = DEFAULT_SYNC_FREQ,
 	.optimal_freq = DEFAULT_OPTIMAL_FREQ,
 	.io_is_busy = 1,
-	..input_boost = 1,
+	.input_boost = 1,
 };
 
 static inline u64 get_cpu_idle_time_jiffy(unsigned int cpu, u64 *wall)
