@@ -43,7 +43,7 @@ echo
 
 DATE_START=$(date +"%s")
 
-sh build_common.sh "JSS"
+sh build_common.sh "JWR"
 
 DATE_END=$(date +"%s")
 echo

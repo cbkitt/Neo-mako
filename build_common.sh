@@ -8,9 +8,12 @@ fi
 
 EXTRA=$1;
 BUILD_VER=$BASE_VER$VER"-"$EXTRA
+BUILD_OPT_H=include/generated/build_opt.h
 
-export FB_MSM_JWR_BUILD=$EXTRA
 export LOCALVERSION="~"`echo $BUILD_VER`
+
+# generate build option
+sh build_opt.sh $EXTRA $BUILD_OPT_H
 
 # make build
 echo "Building $EXTRA version"
