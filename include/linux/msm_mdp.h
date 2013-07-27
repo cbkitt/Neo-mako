@@ -17,6 +17,7 @@
 
 #include <linux/types.h>
 #include <linux/fb.h>
+#include "generated/build_opt.h"
 
 #define MSMFB_IOCTL_MAGIC 'm'
 #define MSMFB_GRP_DISP          _IOW(MSMFB_IOCTL_MAGIC, 1, unsigned int)

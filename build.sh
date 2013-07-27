@@ -2,33 +2,34 @@
 
 clear
 
-BASE_VER="Neo"
-VER="-010"
-BUILD_VER=$BASE_VER$VER
+# Prepare build folder
+export KERNEL_DIR=`pwd`
 
-export LOCALVERSION="~"`echo $BUILD_VER`
-export CROSS_COMPILE=/opt/toolchain/arm-linux-gnueabihf-4.8-2013.08-neo/bin/arm-linux-gnueabihf-
+cd ..
+export PARENT_DIR=`pwd`
+export OUTPUT_DIR=${HOME}
+export ZIMAGE_DIR=$KERNEL_DIR/arch/arm/boot
+export PACKAGE_DIR=$PARENT_DIR/Neo-package
+export CWM_DIR=$PACKAGE_DIR/Neo-ANY
+export CWM_KERNEL_DIR=$CWM_DIR/kernel
+export CWM_INITD_DIR=$CWM_DIR/system/etc/init.d
+export MODULES_DIR=$CWM_DIR/system/lib/modules
+export ADDIN_MODULE_DIR=$PACKAGE_DIR/modules
+
+# Prepare build env
+export BASE_VER="Neo"
+export VER="-012"
+export CROSS_COMPILE=/home/flyfrog/android/arm-unknown-linux-gnueabi-linaro_4.8.2-2013.09/bin/arm-unknown-linux-gnueabi-
 export ARCH=arm
 export SUBARCH=arm
 export KBUILD_BUILD_USER=ramgear
 export KBUILD_BUILD_HOST="ubuntu"
 
-DATE_START=$(date +"%s")
-
-KERNEL_DIR=`pwd`
-OUTPUT_DIR=${HOME}/Custom-Kernel
-ZIMAGE_DIR=$KERNEL_DIR/arch/arm/boot
-RAMDISK_DIR=$KERNEL_DIR/../Neo-Ramdisk
-CWM_DIR=$KERNEL_DIR/../Neo-Ramdisk/cwm_any
-CWM_KERNEL_DIR=$CWM_DIR/kernel
-CWM_INITD_DIR=$CWM_DIR/system/etc/init.d
-MODULES_DIR=$CWM_DIR/system/lib/modules
-ADDIN_MODULE_DIR=$RAMDISK_DIR/modules
+cd $KERNEL_DIR
 
 echo 
-echo "Kernel: "$BUILD_VER
-echo
-echo "LOCALVERSION="$LOCALVERSION
+echo "Building "$BASE_VER$VER
+echo "---------------------------------------"
 echo "CROSS_COMPILE="$CROSS_COMPILE
 echo "ARCH="$ARCH
 echo "SUBARCH="$SUBARCH
@@ -36,42 +37,16 @@ echo "KBUILD_BUILD_USER="$KBUILD_BUILD_USER
 echo "KBUILD_BUILD_HOST="$KBUILD_BUILD_HOST
 echo
 echo "KERNEL_DIR="$KERNEL_DIR
-echo "RAMDISK_DIR="$RAMDISK_DIR
+echo "PACKAGE_DIR="$PACKAGE_DIR
 echo "OUTPUT_DIR="$OUTPUT_DIR
 echo
 
-echo 
-echo "Making defconfig"
-echo
+DATE_START=$(date +"%s")
 
-# make
-make "mako_defconfig"
-make -j3 > ~/make.log
-
-# copy output files
-rm -rf $MODULES_DIR/*
-find $KERNEL_DIR -name '*.ko' -exec cp -v {} $MODULES_DIR \;
-cp $ADDIN_MODULE_DIR/* $MODULES_DIR/
-cp -vr $ZIMAGE_DIR/zImage $CWM_KERNEL_DIR
-
-# create flashable zip
-echo
-echo "Create flashable zip"
-echo
-cd $CWM_DIR
-zip -r `echo $BUILD_VER`-ANY.zip *
-mv  `echo $BUILD_VER`-ANY.zip $OUTPUT_DIR
-
-# clean 
-rm -rf $CWM_KERNEL_DIR/zImage
-rm -rf $MODULES_DIR/*
-
-echo
-echo "Build completed at "$OUTPUT_DIR"/"$BUILD_VER"-ANY.zip"
-
-cd $KERNEL_DIR
+sh build_common.sh "JSS"
 
 DATE_END=$(date +"%s")
 echo
 DIFF=$(($DATE_END - $DATE_START))
 echo "Build completed in $(($DIFF / 60)) minute(s) and $(($DIFF % 60)) seconds."
+
