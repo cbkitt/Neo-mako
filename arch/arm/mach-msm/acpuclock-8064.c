@@ -36,11 +36,11 @@ static struct hfpll_data hfpll_data __initdata = {
 	.nom_vdd_l_max = 42,
 	.vdd[HFPLL_VDD_NONE] =       0,
 #ifdef CONFIG_CPU_OVERCLOCK
-	.vdd[HFPLL_VDD_LOW]  =  950000,
-	.vdd[HFPLL_VDD_NOM]  = 1050000,
-	.vdd[HFPLL_VDD_HIGH] = 1150000,
+	.vdd[HFPLL_VDD_LOW]  =  900000,
+	.vdd[HFPLL_VDD_NOM]  = 1000000,
+	.vdd[HFPLL_VDD_HIGH] = 1100000,
 #else
-	.vdd[HFPLL_VDD_LOW]  =  950000,
+	.vdd[HFPLL_VDD_LOW]  =  945000,
 	.vdd[HFPLL_VDD_NOM]  = 1050000,
 	.vdd[HFPLL_VDD_HIGH] = 1150000,
 #endif
@@ -136,6 +136,7 @@ static struct msm_bus_paths bw_level_tbl[] __initdata = {
 	[3] = BW_MBPS(2128), /* At least 266 MHz on bus. */
 	[4] = BW_MBPS(3200), /* At least 400 MHz on bus. */
 	[5] = BW_MBPS(4264), /* At least 533 MHz on bus. */
+	[6] = BW_MBPS(5290), /* At least 533 MHz on bus. */
 };
 
 static struct msm_bus_scale_pdata bus_scale_data __initdata = {
@@ -163,8 +164,8 @@ static struct l2_level l2_freq_tbl[] __initdata = {
 	[14] = { { 1080000, HFPLL, 1, 0x2A }, 1050000, 1050000, 5 },
 	[15] = { { 1134000, HFPLL, 1, 0x2C }, 1050000, 1050000, 5 },
 #ifdef CONFIG_CPU_OVERCLOCK
-    [16] = { { 1188000, HFPLL, 1, 0x2E }, 1150000, 1150000, 5 },
-    [17] = { { 1242000, HFPLL, 1, 0x30 }, 1150000, 1150000, 5 },
+    	[16] = { { 1188000, HFPLL, 1, 0x2E }, 1150000, 1150000, 5 },
+    	[17] = { { 1242000, HFPLL, 1, 0x30 }, 1150000, 1150000, 5 },
 #endif
 	{ }
 };

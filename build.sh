@@ -19,7 +19,7 @@ export ADDIN_MODULE_DIR=$PACKAGE_DIR/modules
 # Prepare build env
 export BASE_VER="Neo"
 export VER="-012"
-export CROSS_COMPILE=/home/flyfrog/android/arm-unknown-linux-gnueabi-linaro_4.8.2-2013.09/bin/arm-unknown-linux-gnueabi-
+export CROSS_COMPILE=$PARENT_DIR/Neo-toolchain/arm-gnueabi-4.8.2-2013.09/bin/arm-unknown-linux-gnueabi-
 export ARCH=arm
 export SUBARCH=arm
 export KBUILD_BUILD_USER=ramgear
@@ -43,7 +43,34 @@ echo
 
 DATE_START=$(date +"%s")
 
-sh build_common.sh "JSS"
+echo "Enter build version:"
+options=("ALL" "JSS" "JWR")
+
+select opt in "${options[@]}"
+do
+ case $opt in
+        "ALL")
+	    make clean
+	    sh build_common.sh "JSS"
+
+	    make clean
+	    sh build_common.sh "JWR"
+	    break;
+            ;;
+        "JSS")
+	    sh build_common.sh "JSS"
+	    break;
+            ;;
+        "JWR")
+	    sh build_common.sh "JWR"
+	    break;
+            ;;
+        *)
+            echo "invalid option";
+            exit 1;
+            ;;
+    esac
+done
 
 DATE_END=$(date +"%s")
 echo
