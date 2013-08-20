@@ -2,12 +2,13 @@
 
 clear
 
-BASE_VER="Matr1x"
-VER="-10.5-Mod"
+BASE_VER="Neo"
+VER="-001"
 BUILD_VER=$BASE_VER$VER
 
 export LOCALVERSION="~"`echo $BUILD_VER`
-export CROSS_COMPILE=/opt/toolchain/arm-eabihf-4.7-2013.04/bin/arm-linux-gnueabihf-
+#export CROSS_COMPILE=/opt/toolchain/arm-eabihf-4.7-2013.04/bin/arm-linux-gnueabihf-
+export CROSS_COMPILE=/opt/toolchain/arm-eabihf-4.8-2013.08/bin/arm-linux-gnueabihf-
 export ARCH=arm
 export SUBARCH=arm
 export KBUILD_BUILD_USER=ramgear
