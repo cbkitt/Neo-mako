@@ -95,13 +95,13 @@ static struct msm_bus_vectors grp3d_low_vectors[] = {
 		.src = MSM_BUS_MASTER_GRAPHICS_3D,
 		.dst = MSM_BUS_SLAVE_EBI_CH0,
 		.ab = 0,
-		.ib = KGSL_CONVERT_TO_MBPS(1064),
+		.ib = KGSL_CONVERT_TO_MBPS(640),
 	},
 	{
 		.src = MSM_BUS_MASTER_GRAPHICS_3D_PORT1,
 		.dst = MSM_BUS_SLAVE_EBI_CH0,
 		.ab = 0,
-		.ib = KGSL_CONVERT_TO_MBPS(1064),
+		.ib = KGSL_CONVERT_TO_MBPS(640),
 	},
 };
 
@@ -110,17 +110,47 @@ static struct msm_bus_vectors grp3d_nominal_low_vectors[] = {
 		.src = MSM_BUS_MASTER_GRAPHICS_3D,
 		.dst = MSM_BUS_SLAVE_EBI_CH0,
 		.ab = 0,
-		.ib = KGSL_CONVERT_TO_MBPS(2128),
+		.ib = KGSL_CONVERT_TO_MBPS(1064),
 	},
 	{
 		.src = MSM_BUS_MASTER_GRAPHICS_3D_PORT1,
 		.dst = MSM_BUS_SLAVE_EBI_CH0,
 		.ab = 0,
-		.ib = KGSL_CONVERT_TO_MBPS(2128),
+		.ib = KGSL_CONVERT_TO_MBPS(1064),
 	},
 };
 
 static struct msm_bus_vectors grp3d_nominal_high_vectors[] = {
+	{
+		.src = MSM_BUS_MASTER_GRAPHICS_3D,
+		.dst = MSM_BUS_SLAVE_EBI_CH0,
+		.ab = 0,
+		.ib = KGSL_CONVERT_TO_MBPS(1600),
+	},
+	{
+		.src = MSM_BUS_MASTER_GRAPHICS_3D_PORT1,
+		.dst = MSM_BUS_SLAVE_EBI_CH0,
+		.ab = 0,
+		.ib = KGSL_CONVERT_TO_MBPS(1600),
+	},
+};
+
+static struct msm_bus_vectors grp3d_fast_low_vectors[] = {
+	{
+		.src = MSM_BUS_MASTER_GRAPHICS_3D,
+		.dst = MSM_BUS_SLAVE_EBI_CH0,
+		.ab = 0,
+		.ib = KGSL_CONVERT_TO_MBPS(3200),
+	},
+	{
+		.src = MSM_BUS_MASTER_GRAPHICS_3D_PORT1,
+		.dst = MSM_BUS_SLAVE_EBI_CH0,
+		.ab = 0,
+		.ib = KGSL_CONVERT_TO_MBPS(3200),
+	},
+};
+
+static struct msm_bus_vectors grp3d_fast_high_vectors[] = {
 	{
 		.src = MSM_BUS_MASTER_GRAPHICS_3D,
 		.dst = MSM_BUS_SLAVE_EBI_CH0,
@@ -140,13 +170,44 @@ static struct msm_bus_vectors grp3d_max_vectors[] = {
 		.src = MSM_BUS_MASTER_GRAPHICS_3D,
 		.dst = MSM_BUS_SLAVE_EBI_CH0,
 		.ab = 0,
-		.ib = KGSL_CONVERT_TO_MBPS(5290),
+		.ib = KGSL_CONVERT_TO_MBPS(5336),
 	},
 	{
 		.src = MSM_BUS_MASTER_GRAPHICS_3D_PORT1,
 		.dst = MSM_BUS_SLAVE_EBI_CH0,
 		.ab = 0,
-		.ib = KGSL_CONVERT_TO_MBPS(5290),
+		.ib = KGSL_CONVERT_TO_MBPS(5336),
+	},
+};
+
+static struct msm_bus_paths grp3d_bus_scale_usecases[] = {
+	{
+		ARRAY_SIZE(grp3d_init_vectors),
+		grp3d_init_vectors,
+	},
+	{
+		ARRAY_SIZE(grp3d_low_vectors),
+		grp3d_low_vectors,
+	},
+	{
+		ARRAY_SIZE(grp3d_nominal_low_vectors),
+		grp3d_nominal_low_vectors,
+	},
+	{
+		ARRAY_SIZE(grp3d_nominal_high_vectors),
+		grp3d_nominal_high_vectors,
+	},
+	{
+		ARRAY_SIZE(grp3d_fast_low_vectors),
+		grp3d_fast_low_vectors,
+	},
+	{
+		ARRAY_SIZE(grp3d_fast_high_vectors),
+		grp3d_fast_high_vectors,
+	},
+	{
+		ARRAY_SIZE(grp3d_max_vectors),
+		grp3d_max_vectors,
 	},
 };
 #else
@@ -209,7 +270,6 @@ static struct msm_bus_vectors grp3d_max_vectors[] = {
 		.ib = KGSL_CONVERT_TO_MBPS(4264),
 	},
 };
-#endif
 
 static struct msm_bus_paths grp3d_bus_scale_usecases[] = {
 	{
@@ -233,6 +293,7 @@ static struct msm_bus_paths grp3d_bus_scale_usecases[] = {
 		grp3d_max_vectors,
 	},
 };
+#endif
 
 static struct msm_bus_scale_pdata grp3d_bus_scale_pdata = {
 	grp3d_bus_scale_usecases,
@@ -285,17 +346,21 @@ static struct kgsl_device_platform_data kgsl_3d0_pdata = {
 	.pwrlevel = {
 #ifdef CONFIG_GPU_OVERCLOCK
 		{
-			.gpu_freq = 487500000,
-			.bus_freq = 4,
+			.gpu_freq = 533333000,
+			.bus_freq = 6,
 			.io_fraction = 0,
 		},
-#else
+		{
+			.gpu_freq = 487500000,
+			.bus_freq = 5,
+			.io_fraction = 0,
+		},
+#endif
         {
 			.gpu_freq = 400000000,
 			.bus_freq = 4,
 			.io_fraction = 0,
 		},
-#endif
 		{
 			.gpu_freq = 320000000,
 			.bus_freq = 3,
