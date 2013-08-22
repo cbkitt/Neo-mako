@@ -36,9 +36,9 @@ static struct hfpll_data hfpll_data __initdata = {
 	.nom_vdd_l_max = 42,
 	.vdd[HFPLL_VDD_NONE] =       0,
 #ifdef CONFIG_CPU_OVERCLOCK
-	.vdd[HFPLL_VDD_LOW]  =  900000,
-	.vdd[HFPLL_VDD_NOM]  = 1000000,
-	.vdd[HFPLL_VDD_HIGH] = 1100000,
+	.vdd[HFPLL_VDD_LOW]  =  945000,
+	.vdd[HFPLL_VDD_NOM]  = 1050000,
+	.vdd[HFPLL_VDD_HIGH] = 1150000,
 #else
 	.vdd[HFPLL_VDD_LOW]  =  945000,
 	.vdd[HFPLL_VDD_NOM]  = 1050000,
@@ -54,7 +54,7 @@ static struct scalable scalable[] __initdata = {
 		.sec_clk_sel = 2,
 		.l2cpmr_iaddr = 0x4501,
 #ifdef CONFIG_CPU_OVERCLOCK
-		.vreg[VREG_CORE] = { "krait0", 1350000 },
+		.vreg[VREG_CORE] = { "krait0", 1450000 },
 		.vreg[VREG_MEM]  = { "krait0_mem", 1250000 },
 		.vreg[VREG_DIG]  = { "krait0_dig", 1250000 },
 #else
@@ -71,7 +71,7 @@ static struct scalable scalable[] __initdata = {
 		.sec_clk_sel = 2,
 		.l2cpmr_iaddr = 0x5501,
 #ifdef CONFIG_CPU_OVERCLOCK
-		.vreg[VREG_CORE] = { "krait1", 1350000 },
+		.vreg[VREG_CORE] = { "krait1", 1450000 },
 		.vreg[VREG_MEM]  = { "krait1_mem", 1250000 },
 		.vreg[VREG_DIG]  = { "krait1_dig", 1250000 },
 #else
@@ -88,7 +88,7 @@ static struct scalable scalable[] __initdata = {
 		.sec_clk_sel = 2,
 		.l2cpmr_iaddr = 0x6501,
 #ifdef CONFIG_CPU_OVERCLOCK
-		.vreg[VREG_CORE] = { "krait2", 1350000 },
+		.vreg[VREG_CORE] = { "krait2", 1450000 },
 		.vreg[VREG_MEM]  = { "krait2_mem", 1250000 },
 		.vreg[VREG_DIG]  = { "krait2_dig", 1250000 },
 #else
@@ -105,7 +105,7 @@ static struct scalable scalable[] __initdata = {
 		.sec_clk_sel = 2,
 		.l2cpmr_iaddr = 0x7501,
 #ifdef CONFIG_CPU_OVERCLOCK
-		.vreg[VREG_CORE] = { "krait3", 1350000 },
+		.vreg[VREG_CORE] = { "krait3", 1450000 },
 		.vreg[VREG_MEM]  = { "krait3_mem", 1250000 },
 		.vreg[VREG_DIG]  = { "krait3_dig", 1250000 },
 #else
