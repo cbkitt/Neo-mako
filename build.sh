@@ -53,11 +53,12 @@ cp -vr $ZIMAGE_DIR/zImage $RAMDISK_DIR
 
 # create ramdisk
 cd $INITRD_DIR
-find . | cpio -o -H newc | gzip > ../ramdisk.cpio.gz
+#find . | cpio -o -H newc | gzip > ../ramdisk.cpio.gz
+find . | cpio -o -H newc | xz --check=crc32 --lzma2=dict=8MiB > ../initrd.img
 
 # create boot.img
 cd $RAMDISK_DIR
-./mkbootimg --kernel zImage --ramdisk ramdisk.cpio.gz --cmdline 'console=ttyHSL0,115200,n8 androidboot.hardware=mako lpj=67677' --base 0x80200000 --pagesize 2048 --ramdiskaddr 0x81800000 -o boot.img
+./mkbootimg --kernel zImage --ramdisk initrd.img --cmdline 'console=ttyHSL0,115200,n8 androidboot.hardware=mako lpj=67677' --base 0x80200000 --pagesize 2048 --ramdiskaddr 0x81800000 -o boot.img
 
 # create flashable zip
 mv boot.img $CWM_DIR
@@ -67,7 +68,7 @@ mv  `echo $BUILD_VER`.zip $OUTPUT_DIR
 
 # clean 
 rm -rf $RAMDISK_DIR/zImage
-rm -rf $RAMDISK_DIR/ramdisk.cpio.gz
+rm -rf $RAMDISK_DIR/initrd.img
 rm -rf $CWM_DIR/boot.img
 
 echo
