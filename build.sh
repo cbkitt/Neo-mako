@@ -3,7 +3,7 @@
 clear
 
 BASE_VER="Neo"
-VER="-001"
+VER="-002"
 BUILD_VER=$BASE_VER$VER
 
 export LOCALVERSION="~"`echo $BUILD_VER`
@@ -21,7 +21,9 @@ ZIMAGE_DIR=$KERNEL_DIR/arch/arm/boot
 RAMDISK_DIR=$KERNEL_DIR/../Neo-Ramdisk
 INITRD_DIR=$RAMDISK_DIR/initrd
 CWM_DIR=$RAMDISK_DIR/cwm
+CWM_ANY_DIR=$RAMDISK_DIR/cwm_any
 MODULES_DIR=$CWM_DIR/system/lib/modules
+MODULES_ANY_DIR=$CWM_ANY_DIR/system/lib/modules
 
 echo 
 echo "Kernel: "$BUILD_VER
@@ -54,22 +56,36 @@ cp -vr $ZIMAGE_DIR/zImage $RAMDISK_DIR
 # create ramdisk
 cd $INITRD_DIR
 #find . | cpio -o -H newc | gzip > ../ramdisk.cpio.gz
-find . | cpio -o -H newc | xz --check=crc32 --lzma2=dict=8MiB > ../initrd.img
+#find . | cpio -o -H newc | xz --check=crc32 --lzma2=dict=8MiB > ../initrd.img
 
 # create boot.img
 cd $RAMDISK_DIR
-./mkbootimg --kernel zImage --ramdisk initrd.img --cmdline 'console=ttyHSL0,115200,n8 androidboot.hardware=mako lpj=67677' --base 0x80200000 --pagesize 2048 --ramdiskaddr 0x81800000 -o boot.img
+./mkbootimg --kernel zImage --ramdisk ramdisk-002.cpio.gz --cmdline 'console=ttyHSL0,115200,n8 androidboot.hardware=mako lpj=67677' --base 0x80200000 --pagesize 2048 --ramdiskaddr 0x81800000 -o boot.img
 
 # create flashable zip
+echo
+echo "Create flashable zip"
+echo
 mv boot.img $CWM_DIR
 cd $CWM_DIR
 zip -r `echo $BUILD_VER`.zip *
 mv  `echo $BUILD_VER`.zip $OUTPUT_DIR
 
+# create flashable zip
+echo
+echo "Create ANY flashable zip"
+echo
+cp zImage $CWM_ANY_DIR/kernel
+cp $MODULES_DIR/* $MODULES_ANY_DIR/
+cd $CWM_ANY_DIR
+zip -r `echo $BUILD_VER`-ANY.zip *
+mv  `echo $BUILD_VER`-ANY.zip $OUTPUT_DIR
+
 # clean 
 rm -rf $RAMDISK_DIR/zImage
 rm -rf $RAMDISK_DIR/initrd.img
 rm -rf $CWM_DIR/boot.img
+rm -rf $CWM_ANY_DIR/kernel/zImage
 
 echo
 echo "Build completed at "$OUTPUT_DIR"/"$BUILD_VER".zip"
