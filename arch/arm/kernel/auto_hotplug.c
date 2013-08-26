@@ -48,7 +48,7 @@
  * FIXME: Turn it into debugfs stats (somehow)
  * because currently it is a sack of shit.
  */
-#define DEBUG 0
+#define DEBUG 1
 
 #define CPUS_AVAILABLE		num_possible_cpus()
 /*
@@ -92,30 +92,33 @@ struct work_struct hotplug_boost_online_work;
 static unsigned int history[SAMPLING_PERIODS];
 static unsigned int index;
 
-static int enabled = 0;
+static int enabled = 1;
 static unsigned int min_online_cpus = 2;
 static unsigned int max_online_cpus = 2;
 static unsigned int min_sampling_rate_ms = DEFAULT_SAMPLING_RATE;
 static unsigned int min_sampling_rate = 0;
-static int limit_online_cpu = 0;
+static int enabled_save = 0;
+
+void hotplug_disable(bool flag);
 
 #ifdef CONFIG_HAS_EARLYSUSPEND
 #ifdef CONFIG_MSM_CPU_FREQ_SET_MIN_MAX
 static unsigned int cpufreq_save_min;
 static unsigned int cpufreq_save_max;
 #endif
+
+void hotplug_disable(bool flag);
+
 static void auto_hotplug_early_suspend(struct early_suspend *handler)
 {
 #ifdef CONFIG_MSM_CPU_FREQ_SET_MIN_MAX
 	struct cpufreq_policy *policy = cpufreq_cpu_get(0);
 
-	cpufreq_save_min = policy->cpuinfo.min_freq;
-	cpufreq_save_max = policy->cpuinfo.max_freq;
+	// save current enable state
+	enabled_save = enabled;
 
-	msm_cpufreq_set_freq_limits(policy->cpu, CONFIG_MSM_CPU_FREQ_SUSPEND_MIN, CONFIG_MSM_CPU_FREQ_SUSPEND_MAX);
-#if DEBUG
-			pr_info("auto_hotplug: Suspend - limit CPU%d freq to %d - %d\n", policy->cpu, CONFIG_MSM_CPU_FREQ_SUSPEND_MIN, CONFIG_MSM_CPU_FREQ_SUSPEND_MAX);
-#endif
+	// force disable
+	enabled = 0;
 #endif
 
 	pr_info("auto_hotplug: early suspend handler\n");
@@ -125,25 +128,39 @@ static void auto_hotplug_early_suspend(struct early_suspend *handler)
 	cancel_delayed_work_sync(&hotplug_offline_work);
 	cancel_delayed_work_sync(&hotplug_decision_work);
 	if (num_online_cpus() > 1) {
-		limit_online_cpu = 0;
 		pr_info("auto_hotplug: Offlining CPUs for early suspend\n");
 		schedule_work_on(0, &hotplug_offline_all_work);
 	}
+
+#ifdef CONFIG_MSM_CPU_FREQ_SET_MIN_MAX
+	cpufreq_save_min = policy->cpuinfo.min_freq;
+	cpufreq_save_max = policy->cpuinfo.max_freq;
+
+	msm_cpufreq_set_freq_limits(policy->cpu, CONFIG_MSM_CPU_FREQ_SUSPEND_MIN, CONFIG_MSM_CPU_FREQ_SUSPEND_MAX);
+#if DEBUG
+	pr_info("auto_hotplug: Suspend - limit CPU%d freq to %d - %d\n", policy->cpu, CONFIG_MSM_CPU_FREQ_SUSPEND_MIN, CONFIG_MSM_CPU_FREQ_SUSPEND_MAX);
+#endif
+
+	hotplug_disable(!enabled);
+#endif
 }
 
 static void auto_hotplug_late_resume(struct early_suspend *handler)
 {
 #ifdef CONFIG_MSM_CPU_FREQ_SET_MIN_MAX
+	// restore enable state
+	enabled = enabled_save;
+
+	hotplug_disable(!enabled);
+
 	msm_cpufreq_set_freq_limits(0, cpufreq_save_min, cpufreq_save_max);
 #if DEBUG
-			pr_info("auto_hotplug: Resume - limit CPU%d freq to %d - %d\n", 0, cpufreq_save_min, cpufreq_save_max);
+	pr_info("auto_hotplug: Resume - limit CPU%d freq to %d - %d\n", 0, cpufreq_save_min, cpufreq_save_max);
 #endif
 #endif
 
 	pr_info("auto_hotplug: late resume handler\n");
 	flags &= ~EARLYSUSPEND_ACTIVE;
-
-	limit_online_cpu = enabled;
 
 	schedule_work(&hotplug_online_all_work);
 }
@@ -157,35 +174,10 @@ static struct early_suspend auto_hotplug_suspend = {
 static int set_enabled(const char *arg, const struct kernel_param *kp)
 {
     int ret = 0;
-    int temp = enabled;
 
     ret = param_set_bool(arg, kp);
 
-    if(enabled != temp){
-    	if (enabled) {
-    		flags &= ~HOTPLUG_DISABLED;
-    		flags &= ~HOTPLUG_PAUSED;
-    		schedule_delayed_work_on(0, &hotplug_decision_work, 0);
-
-#ifdef CONFIG_HAS_EARLYSUSPEND
-    		register_early_suspend(&auto_hotplug_suspend);
-#endif
-    	} else {
-    		flags |= HOTPLUG_DISABLED;
-    		cancel_delayed_work_sync(&hotplug_offline_work);
-    		cancel_delayed_work_sync(&hotplug_decision_work);
-    		cancel_delayed_work_sync(&hotplug_unpause_work);
-
-    		flush_scheduled_work();
-
-#ifdef CONFIG_HAS_EARLYSUSPEND
-    		unregister_early_suspend(&auto_hotplug_suspend);
-#endif
-
-    		// online all cores when disable
-    		schedule_work(&hotplug_online_all_work);
-    	}
-    }
+    hotplug_disable(!enabled);
 
     return ret;
 }
@@ -391,7 +383,7 @@ static inline void __cpuinit hotplug_online_all_work_fn(struct work_struct *work
 	int max = enabled ? max_online_cpus : CPUS_AVAILABLE;
 
 	for_each_possible_cpu(cpu) {
-		if (likely(!cpu_online(cpu)) && (!limit_online_cpu || num_online_cpus() < max)) {
+		if (likely(!cpu_online(cpu)) && num_online_cpus() < max) {
 			cpu_up(cpu);
 #if DEBUG
 			pr_info("auto_hotplug: CPU%d is up\n", cpu);
@@ -411,7 +403,7 @@ static inline void hotplug_offline_all_work_fn(struct work_struct *work)
 	int min = enabled ? min_online_cpus : 1;
 
 	for_each_possible_cpu(cpu) {
-		if (likely(cpu_online(cpu) && (cpu)) && (!limit_online_cpu || (num_online_cpus() > min))) {
+		if (likely(cpu_online(cpu) && (cpu)) && num_online_cpus() > min) {
 			cpu_down(cpu);
 #if DEBUG
 			pr_info("auto_hotplug: CPU%d is down\n", cpu);
@@ -432,6 +424,9 @@ static inline void __cpuinit hotplug_online_single_work_fn(struct work_struct *w
 		if (cpu) {
 			if (!cpu_online(cpu)) {
 				cpu_up(cpu);
+#if DEBUG
+			pr_info("auto_hotplug: CPU%d is up\n", cpu);
+#endif
 				break;
 			}
 		}
@@ -450,6 +445,9 @@ static inline void hotplug_offline_work_fn(struct work_struct *work)
 	for_each_online_cpu(cpu) {
 		if (cpu) {
 			cpu_down(cpu);
+#if DEBUG
+			pr_info("auto_hotplug: CPU%d is down\n", cpu);
+#endif
 			break;
 		}
 	}
