@@ -7,7 +7,7 @@ VER="-003"
 BUILD_VER=$BASE_VER$VER
 
 export LOCALVERSION="~"`echo $BUILD_VER`
-export CROSS_COMPILE=/opt/toolchain/arm-eabihf-4.8-2013.08/bin/arm-linux-gnueabihf-
+export CROSS_COMPILE=/opt/toolchain/arm-eabihf-4.8-2013.08-neo/bin/arm-linux-gnueabihf-
 export ARCH=arm
 export SUBARCH=arm
 export KBUILD_BUILD_USER=ramgear
@@ -75,6 +75,7 @@ mv  `echo $BUILD_VER`.zip $OUTPUT_DIR
 echo
 echo "Create ANY flashable zip"
 echo
+cd $RAMDISK_DIR
 cp zImage $CWM_ANY_DIR/kernel
 cp $MODULES_DIR/* $MODULES_ANY_DIR/
 cd $CWM_ANY_DIR
