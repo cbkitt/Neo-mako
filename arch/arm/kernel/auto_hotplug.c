@@ -71,9 +71,9 @@
  * DISABLE is the load at which a CPU is disabled
  * These two are scaled based on num_online_cpus()
  */
-#define ENABLE_ALL_LOAD_THRESHOLD	(120 * CPUS_AVAILABLE)
-#define ENABLE_LOAD_THRESHOLD		160
-#define DISABLE_LOAD_THRESHOLD		95
+#define ENABLE_ALL_LOAD_THRESHOLD	(100 * CPUS_AVAILABLE)
+#define ENABLE_LOAD_THRESHOLD		300
+#define DISABLE_LOAD_THRESHOLD		60
 
 /* Control flags */
 unsigned char flags;
@@ -99,6 +99,8 @@ static unsigned int max_online_cpus = 2;
 static unsigned int min_sampling_rate_ms = DEFAULT_SAMPLING_RATE;
 static unsigned int min_sampling_rate = 0;
 static unsigned int fix_sampling_rate_ms = 0;
+static unsigned int enable_load_threshold = ENABLE_LOAD_THRESHOLD;
+static unsigned int disable_load_threshold = DISABLE_LOAD_THRESHOLD;
 static int enabled_save = 0;
 
 void hotplug_disable(bool flag);
@@ -305,16 +307,26 @@ static struct kernel_param_ops fix_sampling_rate_ms_ops =
     .get = param_get_uint,
 };
 
+static struct kernel_param_ops enable_load_threshold_ops =
+{
+    .set = param_set_uint,
+    .get = param_get_uint,
+};
+
+static struct kernel_param_ops disable_load_threshold_ops =
+{
+    .set = param_set_uint,
+    .get = param_get_uint,
+};
+
 module_param_cb(enabled, &enabled_ops, &enabled, 0644);
 MODULE_PARM_DESC(enabled, "control auto_hotplug");
-
 module_param_cb(min_online_cpus, &min_online_cpus_ops, &min_online_cpus, 0644);
-
 module_param_cb(max_online_cpus, &max_online_cpus_ops, &max_online_cpus, 0644);
-
 module_param_cb(min_sampling_rate_ms, &min_sampling_rate_ms_ops, &min_sampling_rate_ms, 0644);
-
 module_param_cb(fix_sampling_rate_ms, &fix_sampling_rate_ms_ops, &fix_sampling_rate_ms, 0644);
+module_param_cb(enable_load_threshold, &enable_load_threshold_ops, &enable_load_threshold, 0644);
+module_param_cb(disable_load_threshold, &disable_load_threshold_ops, &disable_load_threshold, 0644);
 
 static inline void hotplug_decision_work_fn(struct work_struct *work)
 {
@@ -329,8 +341,8 @@ static inline void hotplug_decision_work_fn(struct work_struct *work)
 
 	online_cpus = num_online_cpus();
 	available_cpus = CPUS_AVAILABLE;
-	disable_load = DISABLE_LOAD_THRESHOLD * online_cpus;
-	enable_load = ENABLE_LOAD_THRESHOLD * online_cpus;
+	disable_load = disable_load_threshold * online_cpus;
+	enable_load = enable_load_threshold * online_cpus;
 	/*
 	 * Multiply nr_running() by 100 so we don't have to
 	 * use fp division to get the average.
