@@ -94,8 +94,8 @@ static unsigned int history[SAMPLING_PERIODS];
 static unsigned int index;
 
 static int enabled = 1;
-static unsigned int min_online_cpus = 2;
-static unsigned int max_online_cpus = 2;
+static unsigned int min_online_cpus = 1;
+static unsigned int max_online_cpus = 4;
 static unsigned int min_sampling_rate_ms = DEFAULT_SAMPLING_RATE;
 static unsigned int min_sampling_rate = 0;
 static unsigned int fix_sampling_rate_ms = 0;
@@ -117,6 +117,7 @@ static void auto_hotplug_early_suspend(struct early_suspend *handler)
 {
 #ifdef CONFIG_MSM_CPU_FREQ_SET_MIN_MAX
 	struct cpufreq_policy *policy = cpufreq_cpu_get(0);
+	int cpu;
 
 	// save current enable state
 	enabled_save = enabled;
@@ -144,10 +145,12 @@ static void auto_hotplug_early_suspend(struct early_suspend *handler)
 	cpufreq_save_min = policy->cpuinfo.min_freq;
 	cpufreq_save_max = policy->cpuinfo.max_freq;
 
-	msm_cpufreq_set_freq_limits(policy->cpu, CONFIG_MSM_CPU_FREQ_SUSPEND_MIN, CONFIG_MSM_CPU_FREQ_SUSPEND_MAX);
+	for_each_possible_cpu(cpu){
+		msm_cpufreq_set_freq_limits(cpu, CONFIG_MSM_CPU_FREQ_SUSPEND_MIN, CONFIG_MSM_CPU_FREQ_SUSPEND_MAX);
 #if DEBUG
-	pr_info("auto_hotplug: Suspend - limit CPU%d freq to %d - %d\n", policy->cpu, CONFIG_MSM_CPU_FREQ_SUSPEND_MIN, CONFIG_MSM_CPU_FREQ_SUSPEND_MAX);
+		pr_info("auto_hotplug: Suspend - limit CPU%d freq to %d - %d\n", cpu, CONFIG_MSM_CPU_FREQ_SUSPEND_MIN, CONFIG_MSM_CPU_FREQ_SUSPEND_MAX);
 #endif
+	}
 
 	hotplug_disable(!enabled);
 #endif
@@ -156,15 +159,19 @@ static void auto_hotplug_early_suspend(struct early_suspend *handler)
 static void auto_hotplug_late_resume(struct early_suspend *handler)
 {
 #ifdef CONFIG_MSM_CPU_FREQ_SET_MIN_MAX
+	int cpu;
+
 	// restore enable state
 	enabled = enabled_save;
 
 	hotplug_disable(!enabled);
 
-	msm_cpufreq_set_freq_limits(0, cpufreq_save_min, cpufreq_save_max);
+	for_each_possible_cpu(cpu){
+		msm_cpufreq_set_freq_limits(cpu, cpufreq_save_min, cpufreq_save_max);
 #if DEBUG
-	pr_info("auto_hotplug: Resume - limit CPU%d freq to %d - %d\n", 0, cpufreq_save_min, cpufreq_save_max);
+		pr_info("auto_hotplug: Resume - limit CPU%d freq to %d - %d\n", 0, cpufreq_save_min, cpufreq_save_max);
 #endif
+	}
 #endif
 
 #if DEBUG
