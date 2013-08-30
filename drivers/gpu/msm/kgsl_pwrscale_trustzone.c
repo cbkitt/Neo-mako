@@ -144,8 +144,8 @@ static void tz_wake(struct kgsl_device *device, struct kgsl_pwrscale *pwrscale)
 		if(priv->governor == TZ_GOVERNOR_ONDEMAND)
 #endif
 			kgsl_pwrctrl_pwrlevel_change(device, device->pwrctrl.default_pwrlevel);
-		else if(priv->governor == TZ_GOVERNOR_PERFORMANCE)
-			kgsl_pwrctrl_pwrlevel_change(device, device->pwrctrl.max_pwrlevel);
+		//else if(priv->governor == TZ_GOVERNOR_PERFORMANCE)
+		//	kgsl_pwrctrl_pwrlevel_change(device, device->pwrctrl.max_pwrlevel);
 	}
 }
 
@@ -268,7 +268,8 @@ static void tz_sleep(struct kgsl_device *device,
 	struct tz_priv *priv = pwrscale->priv;
 
 	__secure_tz_entry(TZ_RESET_ID, 0, device->id);
-	kgsl_pwrctrl_pwrlevel_change(device, KGSL_MAX_PWRLEVELS - 2);
+	if (priv->governor != TZ_GOVERNOR_PERFORMANCE)
+		kgsl_pwrctrl_pwrlevel_change(device, KGSL_MAX_PWRLEVELS - 2);
 	priv->no_switch_cnt = 0;
 	priv->bin.total_time = 0;
 	priv->bin.busy_time = 0;
