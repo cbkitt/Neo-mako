@@ -494,15 +494,15 @@ apq8064_gpio_regulator_pdata[] __devinitdata = {
 #ifdef CONFIG_CPU_OVERCLOCK
 struct regulator_init_data msm8064_saw_regulator_pdata_8921_s5 =
 	/*	      ID  vreg_name	       min_uV   max_uV */
-	SAW_VREG_INIT(S5, "8921_s5",	       500000, 1350000);
+	SAW_VREG_INIT(S5, "8921_s5",	       700000, 1350000);
 struct regulator_init_data msm8064_saw_regulator_pdata_8921_s6 =
-	SAW_VREG_INIT(S6, "8921_s6",	       500000, 1350000);
+	SAW_VREG_INIT(S6, "8921_s6",	       700000, 1350000);
 
 struct regulator_init_data msm8064_saw_regulator_pdata_8821_s0 =
 	/*	      ID       vreg_name	min_uV  max_uV */
-	SAW_VREG_INIT(8821_S0, "8821_s0",       500000, 1350000);
+	SAW_VREG_INIT(8821_S0, "8821_s0",       700000, 1350000);
 struct regulator_init_data msm8064_saw_regulator_pdata_8821_s1 =
-	SAW_VREG_INIT(8821_S1, "8821_s1",       500000, 1350000);
+	SAW_VREG_INIT(8821_S1, "8821_s1",       700000, 1350000);
 #else
 struct regulator_init_data msm8064_saw_regulator_pdata_8921_s5 =
 	/*	      ID  vreg_name	       min_uV   max_uV */
@@ -534,7 +534,7 @@ apq8064_rpm_regulator_init_data[] __devinitdata = {
 	RPM_SMPS(S1, 1, 1, 0, 1225000, 1225000, NULL, 100000, 3p20, NONE, NONE),
 	RPM_SMPS(S2, 0, 1, 0, 1300000, 1300000, NULL,      0, 1p60, NONE, NONE),
 #ifdef CONFIG_CPU_OVERCLOCK
-	RPM_SMPS(S3, 0, 1, 1,  500000, 1250000, NULL, 100000, 4p80, NONE, NONE),
+	RPM_SMPS(S3, 0, 1, 1,  700000, 1250000, NULL, 100000, 4p80, NONE, NONE),
 #else
 	RPM_SMPS(S3, 0, 1, 1,  500000, 1150000, NULL, 100000, 4p80, NONE, NONE),
 #endif
