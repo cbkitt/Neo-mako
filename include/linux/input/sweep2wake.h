@@ -26,6 +26,12 @@
 #include <linux/hrtimer.h>
 #include <linux/input/lge_touch_core.h>
 
+#define S2W_MODE_OFF		0
+#define S2W_MODE_S2W_S2S	1
+#define S2W_MODE_S2S		2
+
+#define S2W_IS_MODE(x)	(s2w_switch & (x))
+
 #define SWEEP2WAKE_I2C_SLEEP 40
 
 extern int s2w_switch;

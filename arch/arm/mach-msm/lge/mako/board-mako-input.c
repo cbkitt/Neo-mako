@@ -134,8 +134,13 @@ static struct touch_operation_role touch_role = {
 	.orientation = 0,
 	.booting_delay = 200,
 	.reset_delay = 20,
+#ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
+	.suspend_pwr = POWER_SLEEP,
+	.resume_pwr = POWER_WAKE,
+#else
 	.suspend_pwr = POWER_OFF,
 	.resume_pwr = POWER_ON,
+#endif
 	.jitter_filter_enable = 0,
 	.jitter_curr_ratio = 30,
 	.accuracy_filter_enable = 1,
