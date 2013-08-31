@@ -3,11 +3,11 @@
 clear
 
 BASE_VER="Neo"
-VER="-005"
+VER="-006"
 BUILD_VER=$BASE_VER$VER
 
 export LOCALVERSION="~"`echo $BUILD_VER`
-export CROSS_COMPILE=/opt/toolchain/arm-eabihf-4.8-2013.08-neo/bin/arm-linux-gnueabihf-
+export CROSS_COMPILE=/opt/toolchain/arm-linux-gnueabihf-4.8-2013.08-neo/bin/arm-linux-gnueabihf-
 export ARCH=arm
 export SUBARCH=arm
 export KBUILD_BUILD_USER=ramgear
