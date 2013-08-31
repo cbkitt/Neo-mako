@@ -98,7 +98,7 @@ static unsigned int min_online_cpus = 1;
 static unsigned int max_online_cpus = 4;
 static unsigned int min_sampling_rate_ms = DEFAULT_SAMPLING_RATE;
 static unsigned int min_sampling_rate = 0;
-static unsigned int fix_sampling_rate_ms = 0;
+static unsigned int sampling_rate_scale = 0;
 static unsigned int enable_load_threshold = ENABLE_LOAD_THRESHOLD;
 static unsigned int disable_load_threshold = DISABLE_LOAD_THRESHOLD;
 static int enabled_save = 0;
@@ -266,24 +266,6 @@ static int min_sampling_rate_ms_set(const char *arg, const struct kernel_param *
     return ret;
 }
 
-static int fix_sampling_rate_ms_set(const char *arg, const struct kernel_param *kp)
-{
-    int ret;
-
-    ret = param_set_uint(arg, kp);
-
-    if (fix_sampling_rate_ms)
-    	min_sampling_rate = msecs_to_jiffies(fix_sampling_rate_ms);
-    else
-        min_sampling_rate = msecs_to_jiffies(min_sampling_rate_ms);
-
-#if DEBUG
-	pr_info("auto_hotplug: fix_sampling_rate_ms is: %d\n", fix_sampling_rate_ms);
-#endif
-
-    return ret;
-}
-
 static struct kernel_param_ops enabled_ops =
 {
     .set = set_enabled,
@@ -308,9 +290,9 @@ static struct kernel_param_ops min_sampling_rate_ms_ops =
     .get = param_get_uint,
 };
 
-static struct kernel_param_ops fix_sampling_rate_ms_ops =
+static struct kernel_param_ops sampling_rate_scale_ops =
 {
-    .set = fix_sampling_rate_ms_set,
+    .set = param_set_uint,
     .get = param_get_uint,
 };
 
@@ -331,14 +313,14 @@ MODULE_PARM_DESC(enabled, "control auto_hotplug");
 module_param_cb(min_online_cpus, &min_online_cpus_ops, &min_online_cpus, 0644);
 module_param_cb(max_online_cpus, &max_online_cpus_ops, &max_online_cpus, 0644);
 module_param_cb(min_sampling_rate_ms, &min_sampling_rate_ms_ops, &min_sampling_rate_ms, 0644);
-module_param_cb(fix_sampling_rate_ms, &fix_sampling_rate_ms_ops, &fix_sampling_rate_ms, 0644);
+module_param_cb(sampling_rate_scale, &sampling_rate_scale_ops, &sampling_rate_scale, 0644);
 module_param_cb(enable_load_threshold, &enable_load_threshold_ops, &enable_load_threshold, 0644);
 module_param_cb(disable_load_threshold, &disable_load_threshold_ops, &disable_load_threshold, 0644);
 
 static inline void hotplug_decision_work_fn(struct work_struct *work)
 {
 	unsigned int running, disable_load, sampling_rate, enable_load, avg_running = 0;
-	unsigned int online_cpus, available_cpus, i, j;
+	unsigned int online_cpus, i, j;
 #if DEBUG
 	unsigned int k;
 #endif
@@ -347,7 +329,6 @@ static inline void hotplug_decision_work_fn(struct work_struct *work)
 		return;
 
 	online_cpus = num_online_cpus();
-	available_cpus = CPUS_AVAILABLE;
 	disable_load = disable_load_threshold * online_cpus;
 	enable_load = enable_load_threshold * online_cpus;
 	/*
@@ -401,7 +382,7 @@ static inline void hotplug_decision_work_fn(struct work_struct *work)
 #endif
 
 	if (likely(!(flags & HOTPLUG_DISABLED))) {
-		if (unlikely((avg_running >= ENABLE_ALL_LOAD_THRESHOLD) && (online_cpus < available_cpus) && (max_online_cpus > online_cpus))) {
+		if (unlikely((avg_running >= ENABLE_ALL_LOAD_THRESHOLD) && (max_online_cpus > online_cpus))) {
 #if DEBUG
 			pr_info("auto_hotplug: Onlining all CPUs, avg running: %d\n", avg_running);
 #endif
@@ -421,7 +402,7 @@ static inline void hotplug_decision_work_fn(struct work_struct *work)
 		} else if (flags & HOTPLUG_PAUSED) {
 			schedule_delayed_work_on(0, &hotplug_decision_work, min_sampling_rate);
 			return;
-		} else if ((avg_running >= enable_load) && (online_cpus < available_cpus) && (max_online_cpus > online_cpus)) {
+		} else if ((avg_running >= enable_load) && (max_online_cpus > online_cpus)) {
 #if DEBUG
 			pr_info("auto_hotplug: Onlining single CPU, avg running: %d\n", avg_running);
 #endif
@@ -450,10 +431,10 @@ static inline void hotplug_decision_work_fn(struct work_struct *work)
 	/*
 	 * Reduce the sampling rate dynamically based on online cpus.
 	 */
-	if(!fix_sampling_rate_ms)
+	if(!sampling_rate_scale)
 		sampling_rate = min_sampling_rate * (online_cpus * online_cpus);
 	else
-		sampling_rate = min_sampling_rate;
+		sampling_rate = min_sampling_rate * (online_cpus * sampling_rate_scale);
 
 #if DEBUG
 	pr_info("auto_hotplug: sampling_rate is: %d\n", jiffies_to_msecs(sampling_rate));
@@ -611,10 +592,7 @@ int __init auto_hotplug_init(void)
 	pr_info("auto_hotplug: %d CPUs detected\n", CPUS_AVAILABLE);
 
 	// Initial parameters value
-    if (fix_sampling_rate_ms)
-    	min_sampling_rate = msecs_to_jiffies(fix_sampling_rate_ms);
-    else
-        min_sampling_rate = msecs_to_jiffies(min_sampling_rate_ms);
+    min_sampling_rate = msecs_to_jiffies(min_sampling_rate_ms);
 
     // max_online_cpus = num_possible_cpus();
 
