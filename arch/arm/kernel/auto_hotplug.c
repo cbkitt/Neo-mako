@@ -533,7 +533,7 @@ void hotplug_disable(bool flag)
 #if DEBUG
 		pr_info("auto_hotplug: Clearing disable flag\n");
 #endif
-		schedule_delayed_work_on(0, &hotplug_decision_work, 0);
+		schedule_delayed_work_on(0, &hotplug_decision_work, min_sampling_rate);
 	} else if (flag && (!(flags & HOTPLUG_DISABLED))) {
 		flags |= HOTPLUG_DISABLED;
 #if DEBUG
