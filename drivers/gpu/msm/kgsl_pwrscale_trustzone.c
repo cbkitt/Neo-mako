@@ -151,9 +151,9 @@ static void tz_wake(struct kgsl_device *device, struct kgsl_pwrscale *pwrscale)
 
 
 #ifdef CONFIG_MSM_KGSL_SIMPLE_GOV
-#define HISTORY_SIZE 10
+#define HISTORY_SIZE 8
 
-static int ramp_up_threshold = 5000;
+static int ramp_up_threshold = 6000;
 module_param_named(simple_ramp_threshold, ramp_up_threshold, int, 0664);
 
 static unsigned int history[HISTORY_SIZE] = {0};
@@ -162,17 +162,18 @@ static unsigned int counter = 0;
 static int simple_governor(struct kgsl_device *device, int idle_stat)
 {
 	struct kgsl_pwrctrl *pwr = &device->pwrctrl;
-	int i;
+	int i = HISTORY_SIZE;
 	unsigned int total = 0;
+	unsigned int *ptr = history;
 
-	history[counter] = idle_stat;
+	*(ptr + counter) = idle_stat;
 
-	for (i = 0; i < HISTORY_SIZE; i++)
-		total += history[i];
+	while(i--)
+		total += *ptr++;
 
-	total = total/HISTORY_SIZE;
+	total = total >> 3;
 
-	if (++counter == 10)
+	if (++counter >= HISTORY_SIZE)
 		counter = 0;
 
 	/* it's currently busy */
@@ -236,23 +237,31 @@ static void tz_idle(struct kgsl_device *device, struct kgsl_pwrscale *pwrscale)
 		priv->no_switch_cnt = 0;
 	}
 
-	idle = priv->bin.total_time - priv->bin.busy_time;
+	if(priv->bin.busy_time > FLOOR)
+	{
+		val = -1;
+	}
+	else
+	{
+		idle = priv->bin.total_time - priv->bin.busy_time;
+		idle = (idle > 0) ? idle : 0;
+
+#ifdef CONFIG_MSM_KGSL_SIMPLE_GOV
+		if (priv->governor == TZ_GOVERNOR_SIMPLE)
+			val = simple_governor(device, idle);
+		else
+			val = __secure_tz_entry(TZ_UPDATE_ID, idle, device->id);
+#else
+		val = __secure_tz_entry(TZ_UPDATE_ID, idle, device->id);
+#endif
+	}
+
 	priv->bin.total_time = 0;
 	priv->bin.busy_time = 0;
-	idle = (idle > 0) ? idle : 0;
-#ifdef CONFIG_MSM_KGSL_SIMPLE_GOV
-	if (priv->governor == TZ_GOVERNOR_SIMPLE)
-		val = simple_governor(device, idle);
-	else
-		val = __secure_tz_entry(TZ_UPDATE_ID, idle, device->id);
-#else
-	val = __secure_tz_entry(TZ_UPDATE_ID, idle, device->id);
-#endif
+
 	if (val) {
 		kgsl_pwrctrl_pwrlevel_change(device,
 					     pwr->active_pwrlevel + val);
-		//pr_info("TZ idle stat: %d, TZ PL: %d, TZ out: %d\n",
-		//		idle, pwr->active_pwrlevel, val);
 	}
 }
 
