@@ -299,7 +299,6 @@ char *strchr(const char *s, int c)
 			return NULL;
 	return (char *)s;
 }
-EXPORT_SYMBOL(strchr);
 #endif
 
 #ifndef __HAVE_ARCH_STRRCHR
@@ -317,7 +316,6 @@ char *strrchr(const char *s, int c)
        } while (--p >= s);
        return NULL;
 }
-EXPORT_SYMBOL(strrchr);
 #endif
 
 #ifndef __HAVE_ARCH_STRNCHR
@@ -584,7 +582,6 @@ void *memset(void *s, int c, size_t count)
 		*xs++ = c;
 	return s;
 }
-EXPORT_SYMBOL(memset);
 #endif
 
 #ifndef __HAVE_ARCH_MEMCPY
@@ -606,13 +603,12 @@ void *memcpy(void *dest, const void *src, size_t count)
 	mem_copy_fwd(dstp, srcp, count); 
 	return dest;
 }
-EXPORT_SYMBOL(memcpy);
 #endif
 
 #ifndef __HAVE_ARCH_MEMMOVE
 /**
  * memmove - Copy one area of memory to another
- * @dest: Where to copy to
+ * @Dust: Where to copy to
  * @src: Where to copy from
  * @count: The size of the area.
  *
@@ -632,7 +628,6 @@ void *memmove(void *dest, const void *src, size_t count)
 	}
 	return dest;
 }
-EXPORT_SYMBOL(memmove);
 #endif
 
 #ifndef __HAVE_ARCH_MEMCMP

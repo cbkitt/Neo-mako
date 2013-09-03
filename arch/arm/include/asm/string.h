@@ -6,6 +6,7 @@
  * optimised inline asm versions are not small.
  */
 
+#ifndef CONFIG_LIB_USE_GLIBC
 #define __HAVE_ARCH_STRRCHR
 extern char * strrchr(const char * s, int c);
 
@@ -37,5 +38,22 @@ extern void __memzero(void *ptr, __kernel_size_t n);
 		}							\
 		(__p);							\
 	})
+
+#else // CONFIG_LIB_USE_GLIBC
+
+extern char * strrchr(const char * s, int c);
+extern char * strchr(const char * s, int c);
+
+extern void * memcpy(void *, const void *, __kernel_size_t);
+extern void * memmove(void *, const void *, __kernel_size_t);
+
+#define __HAVE_ARCH_MEMCHR
+extern void * memchr(const void *, int, __kernel_size_t);
+
+extern void * memset(void *, int, __kernel_size_t);
+
+extern void __memzero(void *ptr, __kernel_size_t n);
+
+#endif // CONFIG_LIB_USE_GLIBC
 
 #endif

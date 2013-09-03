@@ -378,4 +378,10 @@ config SIGNATURE
 	  Digital signature verification. Currently only RSA is supported.
 	  Implementation is done using GnuPG MPI library
 
+config LIB_USE_GLIBC
+	boolean
+	default y
+	help
+	  Use glic memcpy, memmove instead arch lib.
+
 endmenu
