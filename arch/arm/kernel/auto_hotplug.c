@@ -108,6 +108,8 @@ void hotplug_disable(bool flag);
 #ifdef CONFIG_MSM_CPU_FREQ_SET_MIN_MAX
 static unsigned int cpufreq_save_min;
 static unsigned int cpufreq_save_max;
+static unsigned int scaling_save_min;
+static unsigned int scaling_save_max;
 #endif
 
 void hotplug_disable(bool flag);
@@ -115,18 +117,20 @@ void hotplug_disable(bool flag);
 static void auto_hotplug_early_suspend(struct early_suspend *handler)
 {
 #ifdef CONFIG_MSM_CPU_FREQ_SET_MIN_MAX
+	// Set min/max only cpu0, and offline other.
 	struct cpufreq_policy *policy = cpufreq_cpu_get(0);
-	int cpu;
 
 	cpufreq_save_min = policy->cpuinfo.min_freq;
 	cpufreq_save_max = policy->cpuinfo.max_freq;
+	scaling_save_min = policy->min;
+	scaling_save_max = policy->max;
 
-	for_each_possible_cpu(cpu){
-		msm_cpufreq_set_freq_limits(cpu, CONFIG_MSM_CPU_FREQ_SUSPEND_MIN, CONFIG_MSM_CPU_FREQ_SUSPEND_MAX);
-#if DEBUG
-		pr_info("auto_hotplug: Suspend - limit CPU%d freq to %d - %d\n", cpu, CONFIG_MSM_CPU_FREQ_SUSPEND_MIN, CONFIG_MSM_CPU_FREQ_SUSPEND_MAX);
-#endif
-	}
+	policy->cpuinfo.min_freq = CONFIG_MSM_CPU_FREQ_SUSPEND_MIN;
+	policy->cpuinfo.max_freq = CONFIG_MSM_CPU_FREQ_SUSPEND_MAX;
+	policy->min = CONFIG_MSM_CPU_FREQ_SUSPEND_MIN;
+	policy->max = CONFIG_MSM_CPU_FREQ_SUSPEND_MAX;
+
+	cpufreq_cpu_put(policy);
 #endif
 
 #if DEBUG
@@ -148,14 +152,13 @@ static void auto_hotplug_early_suspend(struct early_suspend *handler)
 static void auto_hotplug_late_resume(struct early_suspend *handler)
 {
 #ifdef CONFIG_MSM_CPU_FREQ_SET_MIN_MAX
-	int cpu;
-
-	for_each_possible_cpu(cpu){
-		msm_cpufreq_set_freq_limits(cpu, cpufreq_save_min, cpufreq_save_max);
-#if DEBUG
-		pr_info("auto_hotplug: Resume - limit CPU%d freq to %d - %d\n", 0, cpufreq_save_min, cpufreq_save_max);
-#endif
-	}
+	// Restore cpu0 min/max freq
+	struct cpufreq_policy *policy = cpufreq_cpu_get(0);
+	policy->cpuinfo.min_freq = cpufreq_save_min;
+	policy->cpuinfo.max_freq = cpufreq_save_max;
+	policy->min = scaling_save_min;
+	policy->max = scaling_save_max;
+	cpufreq_cpu_put(policy);
 #endif
 
 #if DEBUG
@@ -165,6 +168,8 @@ static void auto_hotplug_late_resume(struct early_suspend *handler)
 
 	if(!enabled)
 		schedule_work(&hotplug_online_all_work);
+    else
+    	schedule_delayed_work_on(0, &hotplug_decision_work, min_sampling_rate);
 }
 
 static struct early_suspend auto_hotplug_suspend = {
