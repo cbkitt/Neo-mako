@@ -101,7 +101,6 @@ static unsigned int min_sampling_rate = 0;
 static unsigned int sampling_rate_scale = 0;
 static unsigned int enable_load_threshold = ENABLE_LOAD_THRESHOLD;
 static unsigned int disable_load_threshold = DISABLE_LOAD_THRESHOLD;
-static int enabled_save = 0;
 
 void hotplug_disable(bool flag);
 
@@ -119,11 +118,15 @@ static void auto_hotplug_early_suspend(struct early_suspend *handler)
 	struct cpufreq_policy *policy = cpufreq_cpu_get(0);
 	int cpu;
 
-	// save current enable state
-	enabled_save = enabled;
+	cpufreq_save_min = policy->cpuinfo.min_freq;
+	cpufreq_save_max = policy->cpuinfo.max_freq;
 
-	// force disable
-	enabled = 0;
+	for_each_possible_cpu(cpu){
+		msm_cpufreq_set_freq_limits(cpu, CONFIG_MSM_CPU_FREQ_SUSPEND_MIN, CONFIG_MSM_CPU_FREQ_SUSPEND_MAX);
+#if DEBUG
+		pr_info("auto_hotplug: Suspend - limit CPU%d freq to %d - %d\n", cpu, CONFIG_MSM_CPU_FREQ_SUSPEND_MIN, CONFIG_MSM_CPU_FREQ_SUSPEND_MAX);
+#endif
+	}
 #endif
 
 #if DEBUG
@@ -140,31 +143,12 @@ static void auto_hotplug_early_suspend(struct early_suspend *handler)
 #endif
 		schedule_work_on(0, &hotplug_offline_all_work);
 	}
-
-#ifdef CONFIG_MSM_CPU_FREQ_SET_MIN_MAX
-	cpufreq_save_min = policy->cpuinfo.min_freq;
-	cpufreq_save_max = policy->cpuinfo.max_freq;
-
-	for_each_possible_cpu(cpu){
-		msm_cpufreq_set_freq_limits(cpu, CONFIG_MSM_CPU_FREQ_SUSPEND_MIN, CONFIG_MSM_CPU_FREQ_SUSPEND_MAX);
-#if DEBUG
-		pr_info("auto_hotplug: Suspend - limit CPU%d freq to %d - %d\n", cpu, CONFIG_MSM_CPU_FREQ_SUSPEND_MIN, CONFIG_MSM_CPU_FREQ_SUSPEND_MAX);
-#endif
-	}
-
-	hotplug_disable(!enabled);
-#endif
 }
 
 static void auto_hotplug_late_resume(struct early_suspend *handler)
 {
 #ifdef CONFIG_MSM_CPU_FREQ_SET_MIN_MAX
 	int cpu;
-
-	// restore enable state
-	enabled = enabled_save;
-
-	hotplug_disable(!enabled);
 
 	for_each_possible_cpu(cpu){
 		msm_cpufreq_set_freq_limits(cpu, cpufreq_save_min, cpufreq_save_max);
