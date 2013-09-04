@@ -6,7 +6,7 @@
 
 lib-y		:= backtrace.o changebit.o csumipv6.o csumpartial.o   \
 		   csumpartialcopy.o csumpartialcopyuser.o clearbit.o \
-		   delay.o findbit.o memchr.o memzero.o setbit.o      \
+		   delay.o findbit.o memzero.o setbit.o      \
 		   strncpy_from_user.o strnlen_user.o                 \
 		   testchangebit.o testclearbit.o testsetbit.o        \
 		   ashldi3.o ashrdi3.o lshrdi3.o muldi3.o             \
@@ -15,7 +15,7 @@ lib-y		:= backtrace.o changebit.o csumipv6.o csumpartial.o   \
 		   call_with_stack.o
 		   
 ifneq ($(CONFIG_LIB_USE_GLIBC),y)
-lib-y += memcpy.o memmove.o memset.o strchr.o strrchr.o 
+lib-y += memcpy.o memmove.o memset.o strchr.o strrchr.o memchr.o 
 endif
 
 mmu-y	:= clear_user.o copy_page.o getuser.o putuser.o
