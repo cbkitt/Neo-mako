@@ -3,7 +3,7 @@
 clear
 
 BASE_VER="Neo"
-VER="-007"
+VER="-008"
 BUILD_VER=$BASE_VER$VER
 
 export LOCALVERSION="~"`echo $BUILD_VER`
