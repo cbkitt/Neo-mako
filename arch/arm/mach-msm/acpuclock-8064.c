@@ -36,9 +36,9 @@ static struct hfpll_data hfpll_data __initdata = {
 	.nom_vdd_l_max = 42,
 	.vdd[HFPLL_VDD_NONE] =       0,
 #ifdef CONFIG_CPU_OVERCLOCK
-	.vdd[HFPLL_VDD_LOW]  =  950000,
-	.vdd[HFPLL_VDD_NOM]  = 1100000,
-	.vdd[HFPLL_VDD_HIGH] = 1175000,
+	.vdd[HFPLL_VDD_LOW]  =  945000,
+	.vdd[HFPLL_VDD_NOM]  = 1050000,
+	.vdd[HFPLL_VDD_HIGH] = 1150000,
 #else
 	.vdd[HFPLL_VDD_LOW]  =  945000,
 	.vdd[HFPLL_VDD_NOM]  = 1050000,
@@ -165,7 +165,7 @@ static struct l2_level l2_freq_tbl[] __initdata = {
 	[15] = { { 1134000, HFPLL, 1, 0x2C }, 1050000, 1050000, 5 },
 #ifdef CONFIG_CPU_OVERCLOCK
     [16] = { { 1188000, HFPLL, 1, 0x2E }, 1150000, 1150000, 5 },
-    [17] = { { 1242000, HFPLL, 1, 0x30 }, 1175000, 1175000, 6 },
+    [17] = { { 1242000, HFPLL, 1, 0x30 }, 1150000, 1150000, 5 },
 #endif
 	{ }
 };
@@ -335,9 +335,9 @@ static struct acpu_level acpu_freq_tbl_faster[] __initdata = {
 
 static struct pvs_table pvs_tables[NUM_SPEED_BINS][NUM_PVS] __initdata = {
 	[0][PVS_SLOW]    = {acpu_freq_tbl_slow, sizeof(acpu_freq_tbl_slow),     0 },
-	[0][PVS_NOMINAL] = {acpu_freq_tbl_nom,  sizeof(acpu_freq_tbl_nom),  26000 },
-	[0][PVS_FAST]    = {acpu_freq_tbl_fast, sizeof(acpu_freq_tbl_fast), 26000 },
-	[0][PVS_FASTER]  = {acpu_freq_tbl_faster, sizeof(acpu_freq_tbl_faster), 26000 },
+	[0][PVS_NOMINAL] = {acpu_freq_tbl_nom,  sizeof(acpu_freq_tbl_nom),  25000 },
+	[0][PVS_FAST]    = {acpu_freq_tbl_fast, sizeof(acpu_freq_tbl_fast), 25000 },
+	[0][PVS_FASTER]  = {acpu_freq_tbl_faster, sizeof(acpu_freq_tbl_faster), 25000 },
  };
 
 static struct acpuclk_krait_params acpuclk_8064_params __initdata = {
