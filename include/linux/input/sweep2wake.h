@@ -32,9 +32,11 @@
 
 #define S2W_IS_MODE(x)	(s2w_switch & (x))
 
-#define SWEEP2WAKE_I2C_SLEEP 40
+#define S2W_I2C_DELAY 		20
+#define S2W_I2C_MAX_COUNT 	20
 
-extern int s2w_switch;
+extern unsigned int s2w_switch;
+extern unsigned int retry_cnt;
 extern bool scr_suspended;
 extern bool scr_on_touch;
 extern bool exec_count;
