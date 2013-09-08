@@ -71,9 +71,9 @@
  * DISABLE is the load at which a CPU is disabled
  * These two are scaled based on num_online_cpus()
  */
-#define ENABLE_ALL_LOAD_THRESHOLD	(100 * CPUS_AVAILABLE)
-#define ENABLE_LOAD_THRESHOLD		300
-#define DISABLE_LOAD_THRESHOLD		60
+#define ENABLE_ALL_LOAD_THRESHOLD	(120 * CPUS_AVAILABLE)
+#define ENABLE_LOAD_THRESHOLD		200
+#define DISABLE_LOAD_THRESHOLD		50
 
 /* Control flags */
 unsigned char flags;
@@ -94,11 +94,11 @@ static unsigned int history[SAMPLING_PERIODS];
 static unsigned int index;
 
 static int enabled = 1;
-static unsigned int min_online_cpus = 1;
+static unsigned int min_online_cpus = 2;
 static unsigned int max_online_cpus = 4;
 static unsigned int min_sampling_rate_ms = DEFAULT_SAMPLING_RATE;
 static unsigned int min_sampling_rate = 0;
-static unsigned int sampling_rate_scale = 0;
+static unsigned int sampling_rate_scale = 2;
 static unsigned int enable_load_threshold = ENABLE_LOAD_THRESHOLD;
 static unsigned int disable_load_threshold = DISABLE_LOAD_THRESHOLD;
 
