@@ -37,6 +37,7 @@
 
 extern unsigned int s2w_switch;
 extern unsigned int retry_cnt;
+extern bool wake_from_s2w;
 extern bool scr_suspended;
 extern bool scr_on_touch;
 extern bool exec_count;

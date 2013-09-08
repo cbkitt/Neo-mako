@@ -41,6 +41,7 @@ extern bool is_single_touch(struct lge_touch_data *ts);
 
 /* Resources */
 unsigned int s2w_switch = 0;
+bool wake_from_s2w;
 unsigned int retry_cnt = 0;
 bool scr_suspended = false, exec_count = true;
 bool scr_on_touch = false, barrier[2] = {false, false};
@@ -103,28 +104,30 @@ void detect_sweep2wake(int x, int y, struct lge_touch_data *ts)
         pr_info("[sweep2wake]: x,y(%4d,%4d) single:%s\n",
                 x, y, (single_touch) ? "true" : "false");
 #endif
+        if(!single_touch || y <= 0)
+        	return;
+
 	//left->right
-	if ((single_touch) && (scr_suspended == true) && (s2w_switch > 0)) {
+	if (scr_suspended)
+	{
 		prevx = 0;
 		nextx = S2W_X_B1;
 		if ((barrier[0] == true) ||
 		   ((x > prevx) &&
-		    (x < nextx) &&
-		    (y > 0))) {
+		    (x < nextx))) {
 			prevx = nextx;
 			nextx = S2W_X_B2;
 			barrier[0] = true;
 			if ((barrier[1] == true) ||
 			   ((x > prevx) &&
-			    (x < nextx) &&
-			    (y > 0))) {
+			    (x < nextx))) {
 				prevx = nextx;
 				barrier[1] = true;
-				if ((x > prevx) &&
-				    (y > 0)) {
+				if ((x > prevx)) {
 					if (x > (S2W_X_MAX - S2W_X_FINAL)) {
 						if (exec_count) {
 							printk(KERN_INFO "[sweep2wake]: ON");
+							wake_from_s2w = true;
 							sweep2wake_pwrtrigger();
 							exec_count = false;
 						}
@@ -133,25 +136,22 @@ void detect_sweep2wake(int x, int y, struct lge_touch_data *ts)
 			}
 		}
 	//right->left
-	} else if ((single_touch) && (scr_suspended == false) && (s2w_switch > 0)) {
+	} else if(y > S2W_Y_LIMIT){
 		scr_on_touch=true;
 		prevx = (S2W_X_MAX - S2W_X_FINAL);
 		nextx = S2W_X_B2;
 		if ((barrier[0] == true) ||
 		   ((x < prevx) &&
-		    (x > nextx) &&
-		    (y > S2W_Y_LIMIT))) {
+		    (x > nextx) )) {
 			prevx = nextx;
 			nextx = S2W_X_B1;
 			barrier[0] = true;
 			if ((barrier[1] == true) ||
 			   ((x < prevx) &&
-			    (x > nextx) &&
-			    (y > S2W_Y_LIMIT))) {
+			    (x > nextx) )) {
 				prevx = nextx;
 				barrier[1] = true;
-				if ((x < prevx) &&
-				    (y > S2W_Y_LIMIT)) {
+				if ((x < prevx) ) {
 					if (x < S2W_X_FINAL) {
 						if (exec_count) {
 							printk(KERN_INFO "[sweep2wake]: OFF");

@@ -2269,13 +2269,6 @@ static void touch_early_suspend(struct early_suspend *h)
 
 #ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
         scr_suspended = true;
-        if(S2W_IS_MODE(S2W_MODE_S2W_S2S)){
-        	ts->pdata->role->suspend_pwr = POWER_SLEEP;
-        	ts->pdata->role->resume_pwr = POWER_WAKE;
-        }else{
-        	ts->pdata->role->suspend_pwr = POWER_OFF;
-        	ts->pdata->role->resume_pwr = POWER_ON;
-        }
 #endif
 
 	if (unlikely(touch_debug_mask & DEBUG_TRACE))
@@ -2308,7 +2301,8 @@ static void touch_early_suspend(struct early_suspend *h)
         }
 #ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
         else {
-                enable_irq_wake(ts->client->irq);
+        	release_all_ts_event(ts);
+        	enable_irq_wake(ts->client->irq);
         }
 #endif
 }
@@ -2333,7 +2327,7 @@ static void touch_late_resume(struct early_suspend *h)
 	}
 
 #ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
-        if (!S2W_IS_MODE(S2W_MODE_S2W_S2S))
+        if (!S2W_IS_MODE(S2W_MODE_S2W_S2S) || !wake_from_s2w)
 #endif
         {
 	        touch_power_cntl(ts, ts->pdata->role->resume_pwr);
@@ -2353,7 +2347,10 @@ static void touch_late_resume(struct early_suspend *h)
         }
 #ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
         else
+        {
                 disable_irq_wake(ts->client->irq);
+        }
+        wake_from_s2w = false;
 #endif
 }
 #endif
