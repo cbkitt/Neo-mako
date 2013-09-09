@@ -385,6 +385,7 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -Wno-format-security \
 		   -fno-delete-null-pointer-checks \
 		   -mno-unaligned-access \
+		   -Wno-sizeof-pointer-memaccess \
 		   $(KERNEL_MODS)
 		   
 KBUILD_AFLAGS_KERNEL :=
