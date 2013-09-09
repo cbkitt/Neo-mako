@@ -40,6 +40,10 @@
 #ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
 #include <linux/input/sweep2wake.h>
 #endif
+#ifdef CONFIG_TOUCHSCREEN_LGE_BOOST
+#include <linux/cpufreq.h>
+#include <mach/kgsl.h>
+#endif
 
 struct touch_device_driver*     touch_device_func;
 struct workqueue_struct*        touch_wq;
@@ -104,6 +108,51 @@ static int tr_last_index;
 #if defined(CONFIG_HAS_EARLYSUSPEND)
 static void touch_early_suspend(struct early_suspend *h);
 static void touch_late_resume(struct early_suspend *h);
+#endif
+
+#ifdef CONFIG_TOUCHSCREEN_LGE_BOOST
+#define BOOSTED_TIME  1000  /* ms */
+int lge_boosted;
+// Boost level => 128/200/320/400/533
+int lge_boost_level = 2;
+static unsigned int boosted_time = BOOSTED_TIME;
+static struct timer_list boost_timer;
+static bool boost_scr_suspended;
+
+static void lge_touch_boost(void)
+{
+	if (boosted_time)
+	{
+		lge_boosted = 1;
+		mod_timer(&boost_timer, jiffies + msecs_to_jiffies(boosted_time));
+	}
+}
+
+static void handle_boost(unsigned long data)
+{
+	lge_boosted = 0;
+}
+
+static ssize_t show_boosted_time(struct lge_touch_data *ts, char *buf)
+{
+	int ret = 0;
+
+	ret = sprintf(buf, "%d\n", boosted_time);
+
+	return ret;
+}
+
+static ssize_t store_boosted_time(struct lge_touch_data *ts, const char *buf,
+           size_t count)
+{
+	unsigned int value;
+
+	sscanf(buf, "%d", &value);
+
+	boosted_time = value;
+
+	return count;
+}
 #endif
 
 #ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
@@ -860,6 +909,11 @@ static void touch_work_func(struct work_struct *work)
 
 	atomic_dec(&ts->next_work);
 	ts->ts_data.total_num = 0;
+
+#ifdef CONFIG_TOUCHSCREEN_LGE_BOOST
+	if(lge_boost_level && !boost_scr_suspended)
+		lge_touch_boost();
+#endif
 
 	if (unlikely(ts->work_sync_err_cnt >= MAX_RETRY_COUNT)) {
 		TOUCH_ERR_MSG("Work Sync Failed: Irq-pin has some unknown problems\n");
@@ -1754,7 +1808,9 @@ static LGE_TOUCH_ATTR(delta_max, S_IRUGO | S_IWUSR, show_delta_max, store_delta_
 static LGE_TOUCH_ATTR(max_pressure, S_IRUGO | S_IWUSR, show_max_pressure, store_max_pressure);
 static LGE_TOUCH_ATTR(direction_count, S_IRUGO | S_IWUSR, show_direction_count, store_direction_count);
 static LGE_TOUCH_ATTR(time_to_max_pressure, S_IRUGO | S_IWUSR, show_time_to_max_pressure, store_time_to_max_pressure);
-
+#ifdef CONFIG_TOUCHSCREEN_LGE_BOOST
+static LGE_TOUCH_ATTR(boost_time, S_IRUGO | S_IWUSR, show_boosted_time, store_boosted_time);
+#endif
 static struct attribute *lge_touch_attribute_list[] = {
 	&lge_touch_attr_platform_data.attr,
 	&lge_touch_attr_firmware.attr,
@@ -1772,6 +1828,9 @@ static struct attribute *lge_touch_attribute_list[] = {
 	&lge_touch_attr_max_pressure.attr,
 	&lge_touch_attr_direction_count.attr,
 	&lge_touch_attr_time_to_max_pressure.attr,
+#ifdef CONFIG_TOUCHSCREEN_LGE_BOOST
+	&lge_touch_attr_boost_time.attr,
+#endif
 	NULL,
 };
 
@@ -1925,6 +1984,36 @@ static ssize_t lge_touch_sweep2wake_dump(struct device *dev,
 static DEVICE_ATTR(sweep2wake, (S_IWUSR|S_IRUGO),
 	lge_touch_sweep2wake_show, lge_touch_sweep2wake_dump);
 #endif
+#ifdef CONFIG_TOUCHSCREEN_LGE_BOOST
+static ssize_t lge_touch_boost_show(struct device *dev,
+		struct device_attribute *attr, char *buf)
+{
+	size_t count = 0;
+
+	count += sprintf(buf, "%d\n", lge_boost_level);
+
+	return count;
+}
+
+static ssize_t lge_touch_boost_dump(struct device *dev,
+		struct device_attribute *attr, const char *buf, size_t count)
+{
+	unsigned int boost = 0;
+
+	if (buf[1] == '\n')
+		boost = buf[0] - '0';
+
+	if(boost >= (KGSL_MAX_PWRLEVELS - 2))
+		boost = 0;
+
+	lge_boost_level = boost;
+
+	return count;
+}
+
+static DEVICE_ATTR(boost, (S_IWUSR|S_IRUGO),
+	lge_touch_boost_show, lge_touch_boost_dump);
+#endif
 
 static struct kobject *android_touch_kobj;
 
@@ -1945,6 +2034,13 @@ static int lge_touch_sysfs_init(void)
 		return ret;
 	}
 #endif
+#ifdef CONFIG_TOUCHSCREEN_LGE_BOOST
+	ret = sysfs_create_file(android_touch_kobj, &dev_attr_boost.attr);
+	if (ret) {
+		printk(KERN_ERR "%s: sysfs_create_file failed\n", __func__);
+		return ret;
+	}
+#endif
 	return 0 ;
 }
 
@@ -1952,6 +2048,9 @@ static void lge_touch_sysfs_deinit(void)
 {
 #ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
 	sysfs_remove_file(android_touch_kobj, &dev_attr_sweep2wake.attr);
+#endif
+#ifdef CONFIG_TOUCHSCREEN_LGE_BOOST
+	sysfs_remove_file(android_touch_kobj, &dev_attr_boost.attr);
 #endif
 	kobject_del(android_touch_kobj);
 }
@@ -2151,8 +2250,10 @@ static int touch_probe(struct i2c_client *client,
 		ts->accuracy_filter.direction_count = 8;
 		ts->accuracy_filter.touch_max_count = 4;
 	}
-
-        device_init_wakeup(&client->dev, true);
+#ifdef CONFIG_TOUCHSCREEN_LGE_BOOST
+	setup_timer(&boost_timer, handle_boost, 0);
+#endif
+    device_init_wakeup(&client->dev, true);
 
 #if defined(CONFIG_HAS_EARLYSUSPEND)
 	ts->early_suspend.level = EARLY_SUSPEND_LEVEL_BLANK_SCREEN + 1;
@@ -2254,6 +2355,7 @@ static int touch_remove(struct i2c_client *client)
 		hrtimer_cancel(&ts->timer);
 	}
 
+	del_timer(&boost_timer);
 	input_unregister_device(ts->input_dev);
 	input_free_device(ts->input_dev);
 	kfree(ts);
@@ -2269,6 +2371,9 @@ static void touch_early_suspend(struct early_suspend *h)
 
 #ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
         scr_suspended = true;
+#endif
+#ifdef CONFIG_TOUCHSCREEN_LGE_BOOST
+    boost_scr_suspended = true;
 #endif
 
 	if (unlikely(touch_debug_mask & DEBUG_TRACE))
@@ -2314,6 +2419,9 @@ static void touch_late_resume(struct early_suspend *h)
 
 #ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
         scr_suspended = false;
+#endif
+#ifdef CONFIG_TOUCHSCREEN_LGE_BOOST
+    boost_scr_suspended = false;
 #endif
 
 	if (unlikely(touch_debug_mask & DEBUG_TRACE))

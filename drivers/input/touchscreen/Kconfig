@@ -980,6 +980,10 @@ config TOUCHSCREEN_CHARGER_NOTIFY
 config TOUCHSCREEN_SWEEP2WAKE
         tristate "Sweep2Wake for touchscreens"
         default n
+        
+config TOUCHSCREEN_LGE_BOOST
+        tristate "Boost GPU Freq on touch for touchscreens"
+        default n
 
 endif
 
