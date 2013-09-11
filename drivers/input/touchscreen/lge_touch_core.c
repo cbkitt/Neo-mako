@@ -2003,7 +2003,7 @@ static ssize_t lge_touch_boost_dump(struct device *dev,
 	if (buf[1] == '\n')
 		boost = buf[0] - '0';
 
-	if(boost >= (KGSL_MAX_PWRLEVELS - 2))
+	if(boost > (KGSL_MAX_PWRLEVELS - 2))
 		boost = 0;
 
 	lge_boost_level = boost;

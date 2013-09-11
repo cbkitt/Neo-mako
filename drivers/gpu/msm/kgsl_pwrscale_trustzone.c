@@ -218,10 +218,23 @@ static void tz_idle(struct kgsl_device *device, struct kgsl_pwrscale *pwrscale)
 
 #ifdef CONFIG_TOUCHSCREEN_LGE_BOOST
 	// Jump to boost level
-	if(lge_boosted && lge_boost_level < pwr->active_pwrlevel)
+	if(lge_boosted)
 	{
-		kgsl_pwrctrl_pwrlevel_change(device, KGSL_MAX_PWRLEVELS - lge_boost_level - 2);
-		return;
+		// calculate boost level
+		val = KGSL_MAX_PWRLEVELS - lge_boost_level - 2;
+
+		// check boost freq more than current freq
+		if(val < pwr->active_pwrlevel)
+		{
+			// check max limit
+			if(val < pwr->max_pwrlevel)
+				val = pwr->max_pwrlevel;
+
+			// boost freq
+			kgsl_pwrctrl_pwrlevel_change(device, val);
+
+			return;
+		}
 	}
 #endif
 
