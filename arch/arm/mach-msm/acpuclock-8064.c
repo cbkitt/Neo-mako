@@ -40,7 +40,7 @@ static struct hfpll_data hfpll_data __initdata = {
 	.vdd[HFPLL_VDD_NOM]  = 1050000,
 	.vdd[HFPLL_VDD_HIGH] = 1150000,
 #else
-	.vdd[HFPLL_VDD_LOW]  =  945000,
+	.vdd[HFPLL_VDD_LOW]  =  950000,
 	.vdd[HFPLL_VDD_NOM]  = 1050000,
 	.vdd[HFPLL_VDD_HIGH] = 1150000,
 #endif
@@ -55,8 +55,8 @@ static struct scalable scalable[] __initdata = {
 		.l2cpmr_iaddr = 0x4501,
 #ifdef CONFIG_CPU_OVERCLOCK
 		.vreg[VREG_CORE] = { "krait0", 1350000 },
-		.vreg[VREG_MEM]  = { "krait0_mem", 1175000 },
-		.vreg[VREG_DIG]  = { "krait0_dig", 1175000 },
+		.vreg[VREG_MEM]  = { "krait0_mem", 1250000 },
+		.vreg[VREG_DIG]  = { "krait0_dig", 1250000 },
 #else
 		.vreg[VREG_CORE] = { "krait0", 1200000 },
 		.vreg[VREG_MEM]  = { "krait0_mem", 1150000 },
@@ -72,8 +72,8 @@ static struct scalable scalable[] __initdata = {
 		.l2cpmr_iaddr = 0x5501,
 #ifdef CONFIG_CPU_OVERCLOCK
 		.vreg[VREG_CORE] = { "krait1", 1350000 },
-		.vreg[VREG_MEM]  = { "krait1_mem", 1175000 },
-		.vreg[VREG_DIG]  = { "krait1_dig", 1175000 },
+		.vreg[VREG_MEM]  = { "krait1_mem", 1250000 },
+		.vreg[VREG_DIG]  = { "krait1_dig", 1250000 },
 #else
 		.vreg[VREG_CORE] = { "krait1", 1200000 },
 		.vreg[VREG_MEM]  = { "krait1_mem", 1150000 },
@@ -89,8 +89,8 @@ static struct scalable scalable[] __initdata = {
 		.l2cpmr_iaddr = 0x6501,
 #ifdef CONFIG_CPU_OVERCLOCK
 		.vreg[VREG_CORE] = { "krait2", 1350000 },
-		.vreg[VREG_MEM]  = { "krait2_mem", 1175000 },
-		.vreg[VREG_DIG]  = { "krait2_dig", 1175000 },
+		.vreg[VREG_MEM]  = { "krait2_mem", 1250000 },
+		.vreg[VREG_DIG]  = { "krait2_dig", 1250000 },
 #else
 		.vreg[VREG_CORE] = { "krait2", 1200000 },
 		.vreg[VREG_MEM]  = { "krait2_mem", 1150000 },
@@ -106,8 +106,8 @@ static struct scalable scalable[] __initdata = {
 		.l2cpmr_iaddr = 0x7501,
 #ifdef CONFIG_CPU_OVERCLOCK
 		.vreg[VREG_CORE] = { "krait3", 1350000 },
-		.vreg[VREG_MEM]  = { "krait3_mem", 1175000 },
-		.vreg[VREG_DIG]  = { "krait3_dig", 1175000 },
+		.vreg[VREG_MEM]  = { "krait3_mem", 1250000 },
+		.vreg[VREG_DIG]  = { "krait3_dig", 1250000 },
 #else
 		.vreg[VREG_CORE] = { "krait3", 1200000 },
 		.vreg[VREG_MEM]  = { "krait3_mem", 1150000 },
@@ -136,7 +136,7 @@ static struct msm_bus_paths bw_level_tbl[] __initdata = {
 	[3] = BW_MBPS(2128), /* At least 266 MHz on bus. */
 	[4] = BW_MBPS(3200), /* At least 400 MHz on bus. */
 	[5] = BW_MBPS(4264), /* At least 533 MHz on bus. */
-    [6] = BW_MBPS(5290), /* At least 667 MHz on bus. */
+    [6] = BW_MBPS(5336), /* At least 667 MHz on bus. */
 };
 
 static struct msm_bus_scale_pdata bus_scale_data __initdata = {
