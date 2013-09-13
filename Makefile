@@ -387,6 +387,11 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -mno-unaligned-access \
 		   -Wno-sizeof-pointer-memaccess \
 		   $(KERNEL_MODS)
+
+# Check JWR build
+ifeq ($(FB_MSM_JWR_BUILD), JWR)
+	KBUILD_CFLAGS += -DCONFIG_FB_MSM_JWR
+endif
 		   
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=
