@@ -41,10 +41,12 @@ echo
 
 echo "Enter build version:"
 options=("ALL" "JSS" "JWR")
+
 select opt in "${options[@]}"
 do
  case $opt in
         "ALL")
+	    DATE_START=$(date +"%s")
             echo "you chose choice 1";
             echo "";
 
@@ -58,6 +60,7 @@ do
 	    break;
             ;;
         "JSS")
+	    DATE_START=$(date +"%s")
             echo "you chose choice 2";
             echo "";
             export EXTRA=JSS;
@@ -65,6 +68,7 @@ do
 	    break;
             ;;
         "JWR")
+	    DATE_START=$(date +"%s")
             echo "you chose choice 3";
             echo "";
             export EXTRA=JWR;
@@ -77,4 +81,9 @@ do
             ;;
     esac
 done
+
+DATE_END=$(date +"%s")
+echo
+DIFF=$(($DATE_END - $DATE_START))
+echo "Build completed in $(($DIFF / 60)) minute(s) and $(($DIFF % 60)) seconds."
 

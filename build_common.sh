@@ -5,8 +5,6 @@ BUILD_VER=$BASE_VER$VER"-"$EXTRA
 export FB_MSM_JWR_BUILD=$EXTRA
 export LOCALVERSION="~"`echo $BUILD_VER`
 
-DATE_START=$(date +"%s")
-
 # make build
 echo "Building $EXTRA version"
 
@@ -32,7 +30,3 @@ echo "Building $EXTRA compelted."
 
 cd $KERNEL_DIR
 
-DATE_END=$(date +"%s")
-echo
-DIFF=$(($DATE_END - $DATE_START))
-echo "Build completed in $(($DIFF / 60)) minute(s) and $(($DIFF % 60)) seconds."
