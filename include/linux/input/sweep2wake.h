@@ -30,7 +30,7 @@
 #define S2W_MODE_S2W_S2S	1
 #define S2W_MODE_S2S		2
 
-#define S2W_IS_MODE(x)	(s2w_switch & (x))
+#define S2W_IS_MODE(x)	(s2w_switch == (x))
 
 #define S2W_I2C_DELAY 		20
 #define S2W_I2C_MAX_COUNT 	20
