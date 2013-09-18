@@ -15,8 +15,8 @@ export LOCALVERSION="~"`echo $BUILD_VER`
 # make build
 echo "Building $EXTRA version"
 
-make "mako_defconfig"
-make -j4 #> $OUTPUT_DIR/$EXTRA-make.log
+make "mako_neo_defconfig"
+make -j4 > $OUTPUT_DIR/$EXTRA-make.log
 
 # copy output files
 rm -rf $MODULES_DIR/*
