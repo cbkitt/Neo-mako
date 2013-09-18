@@ -18,7 +18,7 @@ sh build_opt.sh $EXTRA $BUILD_OPT_H
 # make build
 echo "Building $EXTRA version"
 
-make "mako_neo_defconfig"
+make "mako_defconfig"
 make -j4 > $OUTPUT_DIR/$EXTRA-make.log
 
 # copy output files
