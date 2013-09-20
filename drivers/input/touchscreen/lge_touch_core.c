@@ -111,7 +111,7 @@ static void touch_late_resume(struct early_suspend *h);
 #endif
 
 #ifdef CONFIG_TOUCHSCREEN_LGE_BOOST
-#define BOOSTED_TIME  1000  /* ms */
+#define BOOSTED_TIME  2000  /* ms */
 int lge_boosted;
 // Boost level => 128/200/320/400/533
 int lge_boost_level = 2;
