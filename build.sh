@@ -19,7 +19,7 @@ export ADDIN_MODULE_DIR=$PACKAGE_DIR/modules
 # Prepare build env
 export BASE_VER="Neo"
 export VER="-012"
-export CROSS_COMPILE=$PARENT_DIR/Neo-toolchain/arm-gnueabi-4.8.2-2013.09/bin/arm-unknown-linux-gnueabi-
+export CROSS_COMPILE=$PARENT_DIR/Neo-toolchain/arm-linux-4.8.2-2013.09-neo/bin/arm-linux-gnueabihf-
 export ARCH=arm
 export SUBARCH=arm
 export KBUILD_BUILD_USER=ramgear

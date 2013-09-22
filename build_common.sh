@@ -19,7 +19,7 @@ sh build_opt.sh $EXTRA $BUILD_OPT_H
 echo "Building $EXTRA version"
 
 make "mako_defconfig"
-make -j4 > $OUTPUT_DIR/$EXTRA-make.log
+make -j4 #> $OUTPUT_DIR/$EXTRA-make.log
 
 # copy output files
 rm -rf $MODULES_DIR/*
