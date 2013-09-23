@@ -41,6 +41,10 @@ echo "PACKAGE_DIR="$PACKAGE_DIR
 echo "OUTPUT_DIR="$OUTPUT_DIR
 echo
 
+echo "Host CC: " `gcc -v 2>&1 | tail -1`
+echo "Cross CC: " `${CROSS_COMPILE}gcc -v 2>&1 | tail -1`
+echo
+
 DATE_START=$(date +"%s")
 
 echo "Enter build version:"
