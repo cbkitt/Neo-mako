@@ -21,6 +21,7 @@
 #include <linux/spinlock.h>
 #include <mach/socinfo.h>
 #include <mach/scm.h>
+#include <linux/workqueue.h>
 
 #include "kgsl.h"
 #include "kgsl_pwrscale.h"
@@ -53,7 +54,6 @@ spinlock_t tz_lock;
 #define TZ_RESET_ID		0x3
 #define TZ_UPDATE_ID		0x4
 
-#if 0
 #ifdef CONFIG_MSM_SCM
 /* Trap into the TrustZone, and call funcs there. */
 static int __secure_tz_entry(u32 cmd, u32 val, u32 id)
@@ -71,9 +71,9 @@ static int __secure_tz_entry(u32 cmd, u32 val, u32 id)
 	return 0;
 }
 #endif /* CONFIG_MSM_SCM */
-#endif
 
-unsigned long window_time = 0;
+struct delayed_work interactive_work;
+
 unsigned long sample_time_ms = 100;
 unsigned int up_threshold = 60;
 unsigned int down_threshold = 25;
@@ -94,6 +94,66 @@ struct clk_scaling_stats {
 };
 
 static struct clk_scaling_stats gpu_stats;
+static struct kgsl_pwrscale *ptrPwrscale;
+static struct kgsl_device *ptrDev;
+
+static inline void interactive_work_fn(struct work_struct *work)
+{
+	struct kgsl_device *device = ptrDev;
+	struct kgsl_pwrscale *pwrscale = ptrPwrscale;
+	struct kgsl_pwrctrl *pwr = &device->pwrctrl;
+	struct tz_priv *priv = pwrscale->priv;
+	int val_adjust = 0;
+
+	/*
+	 * No need to cast u32 anymore, do_div() does the job :)
+	 */
+	gpu_stats.total_time_ms = do_div(priv->bin.total_time, USEC_PER_MSEC);
+	gpu_stats.busy_time_ms = do_div(priv->bin.busy_time, USEC_PER_MSEC);
+
+	if (debug)
+	{
+		pr_info("GPU current load: %ld\n", gpu_stats.busy_time_ms);
+		pr_info("GPU total time load: %ld\n", gpu_stats.total_time_ms);
+		pr_info("GPU frequency: %d\n", pwr->pwrlevels[pwr->active_pwrlevel].gpu_freq);
+	}
+
+	/*
+	 * Scale the up_threshold value based on the active_pwrlevel. We have
+	 * 6 different levels: 128/200/320/400/487/533 MHz
+	 *
+	 * Making the up_threshold value lower if the active freq lower then 400MHz will
+	 * possibly improve smoothness while scrolling or open applications with
+	 * a lot of images and what not. With a Full HD panel like Flo/Deb I could
+	 * notice a few frame drops while this algorithm didn't scale past 128MHz
+	 * on simple operations. This is fixed with up_threshold being scaled
+	 */
+	if (pwr->active_pwrlevel > 2)
+		gpu_stats.threshold = (up_threshold / pwr->active_pwrlevel) + up_differential;
+	else
+		gpu_stats.threshold = up_threshold - up_differential;
+
+	if ((gpu_stats.busy_time_ms * 100) > (gpu_stats.total_time_ms * gpu_stats.threshold))
+	{
+		if ((pwr->active_pwrlevel > 0) &&
+			(pwr->active_pwrlevel <= (pwr->num_pwrlevels - 1)))
+			val_adjust = -1;
+	}
+	else if ((gpu_stats.busy_time_ms * 100) < (gpu_stats.total_time_ms * down_threshold))
+	{
+		if ((pwr->active_pwrlevel >= 0) &&
+			(pwr->active_pwrlevel < (pwr->num_pwrlevels - 1)))
+			val_adjust = 1;
+	}
+
+	if(val_adjust)
+		kgsl_pwrctrl_pwrlevel_change(device, pwr->active_pwrlevel + val_adjust);
+
+	priv->bin.total_time = 0;
+	priv->bin.busy_time = 0;
+
+	schedule_delayed_work(&interactive_work, msecs_to_jiffies(sample_time_ms));
+}
 
 static ssize_t tz_governor_show(struct kgsl_device *device,
 				struct kgsl_pwrscale *pwrscale,
@@ -130,12 +190,18 @@ static ssize_t tz_governor_store(struct kgsl_device *device,
 	if (!strncmp(str, "ondemand", 8))
 		priv->governor = TZ_GOVERNOR_ONDEMAND;
 	else if (!strncmp(str, interactive_text, strlen(interactive_text) - 2))
+	{
 		priv->governor = TZ_GOVERNOR_INTERACTIVE;
+		schedule_delayed_work(&interactive_work, msecs_to_jiffies(sample_time_ms));
+	}
 	else if (!strncmp(str, "performance", 11))
+	{
 		priv->governor = TZ_GOVERNOR_PERFORMANCE;
-
-	if (priv->governor == TZ_GOVERNOR_PERFORMANCE)
 		kgsl_pwrctrl_pwrlevel_change(device, pwr->max_pwrlevel);
+	}
+
+	if(priv->governor != TZ_GOVERNOR_INTERACTIVE)
+		cancel_delayed_work(&interactive_work);
 
 	mutex_unlock(&device->mutex);
 	return count;
@@ -169,18 +235,12 @@ static void tz_idle(struct kgsl_device *device, struct kgsl_pwrscale *pwrscale)
 	struct kgsl_pwrctrl *pwr = &device->pwrctrl;
 	struct tz_priv *priv = pwrscale->priv;
 	struct kgsl_power_stats stats;
-	int val;
+	int val, idle;
 
 	/* In "performance" mode the clock speed always stays
 	   the same */
 	if (priv->governor == TZ_GOVERNOR_PERFORMANCE)
-	{
 		return;
-	}
-
-	device->ftbl->power_stats(device, &stats);
-	priv->bin.total_time += stats.total_time;
-	priv->bin.busy_time += stats.busy_time;
 
 #ifdef CONFIG_TOUCHSCREEN_LGE_BOOST
 	// Jump to boost level
@@ -204,61 +264,53 @@ static void tz_idle(struct kgsl_device *device, struct kgsl_pwrscale *pwrscale)
 	}
 #endif
 
-	if (time_is_after_jiffies(window_time + msecs_to_jiffies(sample_time_ms)))
+	device->ftbl->power_stats(device, &stats);
+	priv->bin.total_time += stats.total_time;
+	priv->bin.busy_time += stats.busy_time;
+
+	/* Do not waste CPU cycles running this algorithm if
+	* the GPU just started, or if less than FLOOR time
+	* has passed since the last run.
+	*/
+	if ((stats.total_time == 0) ||
+			(priv->bin.total_time < FLOOR))
 		return;
 
-	gpu_stats.total_time_ms = jiffies_to_msecs((long)jiffies - (long)window_time);
+	/* In "interactive" mode the clock speed handle by work queue thread */
+	if (priv->governor == TZ_GOVERNOR_INTERACTIVE)
+		return;
 
-	/*
-	 * No need to cast u32 anymore, do_div() does the job :)
-	 */
-	gpu_stats.busy_time_ms = do_div(priv->bin.busy_time, USEC_PER_MSEC);
-
-	if (debug)
-	{
-		pr_info("GPU current load: %ld\n", gpu_stats.busy_time_ms);
-		pr_info("GPU total time load: %ld\n", gpu_stats.total_time_ms);
-		pr_info("GPU frequency: %d\n",
-		pwr->pwrlevels[pwr->active_pwrlevel].gpu_freq);
+	/* If the GPU has stayed in turbo mode for a while, *
+	* stop writing out values. */
+	if (pwr->active_pwrlevel == 0) {
+		if (priv->no_switch_cnt > SWITCH_OFF) {
+			priv->skip_cnt++;
+			if (priv->skip_cnt > SKIP_COUNTER) {
+				priv->no_switch_cnt -= SWITCH_OFF_RESET_TH;
+				priv->skip_cnt = 0;
+			}
+				return;
+		}
+		priv->no_switch_cnt++;
+	} else {
+		priv->no_switch_cnt = 0;
 	}
 
-	/*
-	 * Scale the up_threshold value based on the active_pwrlevel. We have
-	 * 4 different levels:
-	 * 3 = 128MHz
-	 * 2 = 200MHz
-	 * 1 = 320MHz
-	 * 0 = 400MHz
-	 *
-	 * Making the up_threshold value lower if the active level is 2 or 3 will
-	 * possibly improve smoothness while scrolling or open applications with
-	 * a lot of images and what not. With a Full HD panel like Flo/Deb I could
-	 * notice a few frame drops while this algorithm didn't scale past 128MHz
-	 * on simple operations. This is fixed with up_threshold being scaled
-	 */
-	if (pwr->active_pwrlevel > 1)
-		gpu_stats.threshold = (up_threshold / pwr->active_pwrlevel) + up_differential;
+	if(priv->bin.busy_time > FLOOR)
+		val = -1;
 	else
-		gpu_stats.threshold = up_threshold - up_differential;
+	{
+		idle = priv->bin.total_time - priv->bin.busy_time;
+		idle = (idle > 0) ? idle : 0;
 
-	if ((gpu_stats.busy_time_ms * 100) > (gpu_stats.total_time_ms * gpu_stats.threshold))
-	{
-		if ((pwr->active_pwrlevel > 0) &&
-			(pwr->active_pwrlevel <= (pwr->num_pwrlevels - 1)))
-			kgsl_pwrctrl_pwrlevel_change(device,
-					     pwr->active_pwrlevel - 1);
-	}
-	else if ((gpu_stats.busy_time_ms * 100) < (gpu_stats.total_time_ms * down_threshold))
-	{
-		if ((pwr->active_pwrlevel >= 0) &&
-			(pwr->active_pwrlevel < (pwr->num_pwrlevels - 1)))
-			kgsl_pwrctrl_pwrlevel_change(device,
-					     pwr->active_pwrlevel + 1);
+		val = __secure_tz_entry(TZ_UPDATE_ID, idle, device->id);
 	}
 
-	priv->bin.total_time = 0;
-	priv->bin.busy_time = 0;
-	window_time = jiffies;
+ 	priv->bin.total_time = 0;
+ 	priv->bin.busy_time = 0;
+
+ 	if (val)
+ 		kgsl_pwrctrl_pwrlevel_change(device, pwr->active_pwrlevel + val);
 }
 
 static void tz_busy(struct kgsl_device *device,
@@ -272,17 +324,20 @@ static void tz_sleep(struct kgsl_device *device,
 {
 	struct tz_priv *priv = pwrscale->priv;
 
+	__secure_tz_entry(TZ_RESET_ID, 0, device->id);
+
 	/*
-	* We don't want the GPU to go to sleep if the busy_time_ms calculated on
-	* idle routine is not below down_threshold. This is just a measure of
-	* precaution
-	*/
-	if ((gpu_stats.busy_time_ms * 100) < (gpu_stats.total_time_ms * down_threshold))
+	 * Performance skip sleep, Interactive already has handler.
+	 */
+	if (priv->governor != TZ_GOVERNOR_PERFORMANCE)
+#ifdef CONFIG_TOUCHSCREEN_LGE_BOOST
+		if(!lge_boosted)
+#endif
 		kgsl_pwrctrl_pwrlevel_change(device, KGSL_MAX_PWRLEVELS - 2);
 
+	priv->no_switch_cnt = 0;
 	priv->bin.total_time = 0;
 	priv->bin.busy_time = 0;
-	window_time = jiffies;
 }
 
 #ifdef CONFIG_MSM_SCM
@@ -293,6 +348,8 @@ static int tz_init(struct kgsl_device *device, struct kgsl_pwrscale *pwrscale)
 	gpu_stats.total_time_ms = 0;
 	gpu_stats.busy_time_ms = 0;
 	gpu_stats.threshold = 0;
+	ptrPwrscale = pwrscale;
+	ptrDev = device;
 
 	priv = pwrscale->priv = kzalloc(sizeof(struct tz_priv), GFP_KERNEL);
 	if (pwrscale->priv == NULL)
@@ -301,6 +358,11 @@ static int tz_init(struct kgsl_device *device, struct kgsl_pwrscale *pwrscale)
 	priv->governor = TZ_GOVERNOR_INTERACTIVE;
 	spin_lock_init(&tz_lock);
 	kgsl_pwrscale_policy_add_files(device, pwrscale, &tz_attr_group);
+
+	INIT_DELAYED_WORK(&interactive_work, interactive_work_fn);
+
+	if (priv->governor == TZ_GOVERNOR_INTERACTIVE)
+		schedule_delayed_work(&interactive_work, msecs_to_jiffies(sample_time_ms));
 
 	return 0;
 }
