@@ -1451,7 +1451,7 @@ static struct msm_rpmrs_platform_data msm_rpmrs_data __initdata = {
 		[MSM_RPMRS_VDD_MEM_RET_HIGH]	= 750000,
 		[MSM_RPMRS_VDD_MEM_ACTIVE]	= 1050000,
 #ifdef CONFIG_CPU_OVERCLOCK
-		[MSM_RPMRS_VDD_MEM_MAX]		= 1250000,
+		[MSM_RPMRS_VDD_MEM_MAX]		= 1275000,
 #else
 		[MSM_RPMRS_VDD_MEM_MAX]		= 1150000,
 #endif
@@ -1461,7 +1461,7 @@ static struct msm_rpmrs_platform_data msm_rpmrs_data __initdata = {
 		[MSM_RPMRS_VDD_DIG_RET_HIGH]	= 750000,
 		[MSM_RPMRS_VDD_DIG_ACTIVE]	= 950000,
 #ifdef CONFIG_CPU_OVERCLOCK
-		[MSM_RPMRS_VDD_DIG_MAX]		= 1250000,
+		[MSM_RPMRS_VDD_DIG_MAX]		= 1275000,
 #else
 		[MSM_RPMRS_VDD_DIG_MAX]		= 1150000,
 #endif

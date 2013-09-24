@@ -54,9 +54,9 @@ static struct scalable scalable[] __initdata = {
 		.sec_clk_sel = 2,
 		.l2cpmr_iaddr = 0x4501,
 #ifdef CONFIG_CPU_OVERCLOCK
-		.vreg[VREG_CORE] = { "krait0", 1450000 },
-		.vreg[VREG_MEM]  = { "krait0_mem", 1250000 },
-		.vreg[VREG_DIG]  = { "krait0_dig", 1250000 },
+		.vreg[VREG_CORE] = { "krait0", 1350000 },
+		.vreg[VREG_MEM]  = { "krait0_mem", 1275000 },
+		.vreg[VREG_DIG]  = { "krait0_dig", 1275000 },
 #else
 		.vreg[VREG_CORE] = { "krait0", 1200000 },
 		.vreg[VREG_MEM]  = { "krait0_mem", 1150000 },
@@ -71,9 +71,9 @@ static struct scalable scalable[] __initdata = {
 		.sec_clk_sel = 2,
 		.l2cpmr_iaddr = 0x5501,
 #ifdef CONFIG_CPU_OVERCLOCK
-		.vreg[VREG_CORE] = { "krait1", 1450000 },
-		.vreg[VREG_MEM]  = { "krait1_mem", 1250000 },
-		.vreg[VREG_DIG]  = { "krait1_dig", 1250000 },
+		.vreg[VREG_CORE] = { "krait1", 1350000 },
+		.vreg[VREG_MEM]  = { "krait1_mem", 1275000 },
+		.vreg[VREG_DIG]  = { "krait1_dig", 1275000 },
 #else
 		.vreg[VREG_CORE] = { "krait1", 1200000 },
 		.vreg[VREG_MEM]  = { "krait1_mem", 1150000 },
@@ -88,9 +88,9 @@ static struct scalable scalable[] __initdata = {
 		.sec_clk_sel = 2,
 		.l2cpmr_iaddr = 0x6501,
 #ifdef CONFIG_CPU_OVERCLOCK
-		.vreg[VREG_CORE] = { "krait2", 1450000 },
-		.vreg[VREG_MEM]  = { "krait2_mem", 1250000 },
-		.vreg[VREG_DIG]  = { "krait2_dig", 1250000 },
+		.vreg[VREG_CORE] = { "krait2", 1350000 },
+		.vreg[VREG_MEM]  = { "krait2_mem", 1275000 },
+		.vreg[VREG_DIG]  = { "krait2_dig", 1275000 },
 #else
 		.vreg[VREG_CORE] = { "krait2", 1200000 },
 		.vreg[VREG_MEM]  = { "krait2_mem", 1150000 },
@@ -105,9 +105,9 @@ static struct scalable scalable[] __initdata = {
 		.sec_clk_sel = 2,
 		.l2cpmr_iaddr = 0x7501,
 #ifdef CONFIG_CPU_OVERCLOCK
-		.vreg[VREG_CORE] = { "krait3", 1450000 },
-		.vreg[VREG_MEM]  = { "krait3_mem", 1250000 },
-		.vreg[VREG_DIG]  = { "krait3_dig", 1250000 },
+		.vreg[VREG_CORE] = { "krait3", 1350000 },
+		.vreg[VREG_MEM]  = { "krait3_mem", 1275000 },
+		.vreg[VREG_DIG]  = { "krait3_dig", 1275000 },
 #else
 		.vreg[VREG_CORE] = { "krait3", 1200000 },
 		.vreg[VREG_MEM]  = { "krait3_mem", 1150000 },
